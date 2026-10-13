@@ -26,6 +26,8 @@ export const features: Feature[] = [
     summary: "Strongly consistent counters, WebSocket chat, alarms." },
   { slug: "ai", name: "Workers AI", category: "AI", phase: 4, ready: true,
     summary: "Run models on Cloudflare's GPUs: text, images, embeddings." },
+  { slug: "agents", name: "Agents SDK", category: "AI", phase: 10, ready: true,
+    summary: "A stateful AI agent with tools, approvals, schedules and live state." },
   { slug: "vectorize", name: "Vectorize", category: "AI", phase: 4, ready: true,
     summary: "Vector database for semantic search and RAG." },
   { slug: "ai-gateway", name: "AI Gateway", category: "AI", phase: 4, ready: true,

@@ -1,4 +1,5 @@
 import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-plugin";
+import agents from "agents/vite";
 import { defineConfig } from "vitest/config";
 
 // Tests run *inside* workerd (the real Workers runtime) with the bindings from
@@ -11,6 +12,7 @@ export default defineConfig(async () => {
   const migrations = await readD1Migrations("./migrations");
   return {
     plugins: [
+      agents(),
       cloudflareTest({
         wrangler: { configPath: "./wrangler.jsonc" },
         // Never touch real AI / Vectorize from tests. Those routes aren't tested.

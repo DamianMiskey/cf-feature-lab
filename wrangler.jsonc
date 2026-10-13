@@ -15,7 +15,7 @@
   // Requests to /api/* always run the Worker first.
   "assets": {
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/agents/*"]
   },
 
   // Plain-text environment variables (visible in the dashboard, committed to git).
@@ -96,7 +96,9 @@
     // Protects every write and AI endpoint: 30 per minute per visitor IP.
     { "name": "WRITE_LIMITER", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } },
     // A deliberately tight limiter for the demo page: 5 per 10 seconds.
-    { "name": "DEMO_LIMITER", "namespace_id": "1002", "simple": { "limit": 5, "period": 10 } }
+    { "name": "DEMO_LIMITER", "namespace_id": "1002", "simple": { "limit": 5, "period": 10 } },
+    // Caps the AI agent's model calls: 10 per minute in total.
+    { "name": "AGENT_LIMITER", "namespace_id": "1003", "simple": { "limit": 10, "period": 60 } }
   ],
 
   // Workers Analytics Engine: write unlimited-cardinality data points from
@@ -123,13 +125,17 @@
     "bindings": [
       { "name": "COUNTER", "class_name": "Counter" },
       { "name": "CHAT_ROOM", "class_name": "ChatRoom" },
-      { "name": "ALARM_CLOCK", "class_name": "AlarmClock" }
+      { "name": "ALARM_CLOCK", "class_name": "AlarmClock" },
+      // Agents SDK: the binding name matches the class name, so the client can
+      // reach it at /agents/lab-agent/<instance-name>.
+      { "name": "LabAgent", "class_name": "LabAgent" }
     ]
   },
   // DO classes are versioned with migrations. `new_sqlite_classes` gives them
   // SQLite-backed storage, which is the only kind available on the free plan.
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["Counter", "ChatRoom", "AlarmClock"] }
+    { "tag": "v1", "new_sqlite_classes": ["Counter", "ChatRoom", "AlarmClock"] },
+    { "tag": "v2", "new_sqlite_classes": ["LabAgent"] }
   ],
 
   // Version metadata: tells the Worker which deployed version is running.

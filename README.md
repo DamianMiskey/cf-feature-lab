@@ -54,6 +54,8 @@ Phase 5 created two queues once with `npx wrangler queues create cf-feature-lab-
 
 **Browser Run** (formerly Browser Rendering): the free plan allows 10 browser-minutes per day and one new browser launch at a time. The Worker reuses warm sessions (`disconnect()` instead of `close()`) and retries when the launch limit is hit.
 
+**Agents SDK:** `worker/agents/LabAgent.ts` is a Durable Object (binding `LabAgent`, migration `v2`) reached at `/agents/lab-agent/<visitor-id>` through `routeAgentRequest()` in `worker/index.ts`. `vite.config.ts` and `vitest.config.ts` include the `agents/vite` plugin to compile `@callable()` decorators. Model: `@cf/zai-org/glm-4.7-flash`, chosen after comparing tool-calling reliability with three other Workers AI models. Chat goes over a WebSocket, so it has its own limiter (`AGENT_LIMITER`, 10 messages per minute).
+
 **Run one dev server at a time.** Two `npm run dev` processes in this folder share `.wrangler/state` and can break each other. If every `/api` call suddenly fails with "fetch failed" (for example after editing `wrangler.jsonc`), restart `npm run dev`.
 
 Local data (KV, D1, R2) lives in `.wrangler/state/`. Delete that folder to reset.
@@ -63,7 +65,7 @@ After editing `wrangler.jsonc`, run `npm run cf-typegen` to regenerate the typed
 ## Test it
 
 ```bash
-npm test          # 34 integration tests inside workerd: KV, D1, R2, DOs (incl. WebSockets + alarms),
+npm test          # 38 integration tests inside workerd: KV, D1, R2, DOs (incl. WebSockets + alarms),
                   # Queues, Cron, Workflows (mocked AI step + approval event), Cache API, rate limits
 npm run test:watch
 ```
@@ -74,7 +76,7 @@ Tests use `@cloudflare/vitest-plugin` (the successor to `@cloudflare/vitest-pool
 
 Work through the pages in this order. Each one builds on the last:
 
-1. **Workers basics** → 2. **Static Assets** → 3. **KV** → 4. **D1** → 5. **R2** → 5b. **Hyperdrive** → 6. **Durable Objects** (run the race test!) → 7. **Queues** → 8. **Workflows** → 9. **Workers AI** → 10. **Vectorize** (RAG over your D1 notes) → 11. **Cache API** → 12. **Rate Limiting** → 12b. **Browser Run** → 13. **Logs & Observability** → 14. **Workers vs Pages**
+1. **Workers basics** → 2. **Static Assets** → 3. **KV** → 4. **D1** → 5. **R2** → 5b. **Hyperdrive** → 6. **Durable Objects** (run the race test!) → 7. **Queues** → 8. **Workflows** → 9. **Workers AI** → 10. **Vectorize** (RAG over your D1 notes) → 10b. **Agents SDK** → 11. **Cache API** → 12. **Rate Limiting** → 12b. **Browser Run** → 13. **Logs & Observability** → 14. **Workers vs Pages**
 
 For each feature: read the page, use the demo, open "Show Worker code", then find the binding in `wrangler.jsonc` and its test in `test/`.
 
@@ -105,5 +107,6 @@ For each feature: read the page, use the demo, open "Show Worker code", then fin
 - [x] **Phase 5: Async.** Cron Triggers (housekeeping every 30 min), Queues (batching, retries, dead-letter queue), Workflows (durable steps, sleep, retries, waitForEvent approval)
 - [x] **Phase 6: Edge extras.** Cache API (HIT/MISS/purge), Rate Limiting (demo + 30 writes/min/IP on the whole API), Analytics Engine (a data point per request + SQL queries), Images (transform R2 images). Skipped: Hyperdrive (needs an external Postgres), Browser Rendering
 - [x] **Phase 7: Pages.** Sibling project `../cf-feature-lab-pages` (Pages Functions, `_redirects`, `_headers`, 404, shared KV, service binding back to this Worker, branch preview deploys), plus the Workers vs Pages comparison page
+- [x] **Phase 10: Agents + Git.** `LabAgent` (Agents SDK + `@cloudflare/ai-chat`): streaming chat on Workers AI via AI Gateway, server tools over D1/DOs/R2, a human-approved `addNote` tool, a browser-side tool, `this.schedule()` reminders, live `setState` sync and `@callable()` RPC. The project is now a Git repo.
 - [x] **Phase 9: Extras.** Hyperdrive in front of a Neon Postgres database (live: ~2,050 ms direct vs 3–8 ms through Hyperdrive), Browser Run (screenshots, PDFs, scraping, warm-session reuse)
 - [x] **Phase 8: Polish.** 28 integration tests at the time (`@cloudflare/vitest-plugin`), Logs & Observability page (Workers Logs, `wrangler tail`, version metadata, gradual rollouts), learning path on the home page

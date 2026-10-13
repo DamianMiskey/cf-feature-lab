@@ -14,6 +14,7 @@ const LEARNING_PATH: [string, string][] = [
   ["workflows", "durable multi-step processes"],
   ["ai", "running models"],
   ["vectorize", "semantic search and RAG, combining AI + D1"],
+  ["agents", "everything together: an AI agent with tools, memory, schedules and live state"],
   ["cache", "edge caching"],
   ["rate-limiting", "protecting all of the above"],
   ["browser", "a real browser for screenshots, PDFs and scraping"],

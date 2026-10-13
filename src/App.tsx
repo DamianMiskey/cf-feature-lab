@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import { Layout } from "./components/Layout";
 import { features } from "./features";
 import { Ai } from "./pages/Ai";
+import { Agent } from "./pages/Agent";
 import { AiGateway } from "./pages/AiGateway";
 import { AnalyticsEngine } from "./pages/AnalyticsEngine";
 import { Assets } from "./pages/Assets";
@@ -47,6 +48,7 @@ const pages: Record<string, ComponentType> = {
   observability: Observability,
   browser: BrowserRun,
   hyperdrive: Hyperdrive,
+  agents: Agent,
 };
 
 function Routes() {

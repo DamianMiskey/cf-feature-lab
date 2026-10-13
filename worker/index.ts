@@ -1,3 +1,4 @@
+import { routeAgentRequest } from "agents";
 import { Hono } from "hono";
 import ai from "./routes/ai";
 import { analytics as recordAnalytics, limitWrites } from "./middleware";
@@ -59,6 +60,7 @@ app.onError((err, c) => {
 export { AlarmClock } from "./durable-objects/AlarmClock";
 export { ChatRoom } from "./durable-objects/ChatRoom";
 export { Counter } from "./durable-objects/Counter";
+export { LabAgent } from "./agents/LabAgent";
 // So are Workflow classes.
 export { OnboardingWorkflow } from "./workflows/OnboardingWorkflow";
 
@@ -67,7 +69,11 @@ export { OnboardingWorkflow } from "./workflows/OnboardingWorkflow";
 //   scheduled → Cron Triggers
 //   queue     → batches of messages from Queues
 export default {
-  fetch: app.fetch,
+  // Agent connections (/agents/<agent>/<name>) are routed to the right agent
+  // instance first. Everything else goes to the Hono API.
+  async fetch(request, env, ctx) {
+    return (await routeAgentRequest(request, env)) ?? app.fetch(request, env, ctx);
+  },
 
   async scheduled(controller, env, ctx) {
     // waitUntil keeps the Worker alive until the promise settles.

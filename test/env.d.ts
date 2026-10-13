@@ -4,7 +4,8 @@ import type { D1Migration } from "cloudflare:test";
 declare global {
   namespace Cloudflare {
     interface Env {
-      TEST_MIGRATIONS: D1Migration[];
+      // Optional so the real Env (used by app code) still type-checks.
+      TEST_MIGRATIONS?: D1Migration[];
     }
   }
 }

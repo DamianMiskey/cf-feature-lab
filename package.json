@@ -16,11 +16,17 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@ai-sdk/react": "^4.0.142",
+    "@cloudflare/ai-chat": "^0.12.1",
     "@cloudflare/puppeteer": "^1.4.0",
+    "agents": "^0.28.1",
+    "ai": "^7.0.139",
     "hono": "^4.13.13",
     "pg": "^8.23.1",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "workers-ai-provider": "^4.0.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.63.1",
