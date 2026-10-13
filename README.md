@@ -62,6 +62,18 @@ Local data (KV, D1, R2) lives in `.wrangler/state/`. Delete that folder to reset
 
 After editing `wrangler.jsonc`, run `npm run cf-typegen` to regenerate the typed `Env`.
 
+## Continuous deployment (Workers Builds)
+
+The Worker is connected to `github.com/DamianMiskey/cf-feature-lab`. Every push to `main`:
+
+1. installs dependencies
+2. runs **`npm test && npm run build`** (a failing test stops the deploy)
+3. runs **`npx wrangler deploy && npx wrangler d1 migrations apply DB --remote`**
+
+Preview builds for other branches are off. If you turn them on, use `npx wrangler versions upload`: it gives each branch build a preview URL but shares production data. `npx wrangler preview` (open beta) needs a `previews` block with separate resources for every binding first.
+
+Secrets (`DEMO_SECRET`, `CF_ANALYTICS_TOKEN`, `NEON_DATABASE_URL`) live on the Worker in Cloudflare, not in the repo, so builds don't need them.
+
 ## Test it
 
 ```bash
