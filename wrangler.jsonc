@@ -1,0 +1,141 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cf-feature-lab",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Serve on <name>.<subdomain>.workers.dev, and give every uploaded version
+  // its own preview URL (try `npx wrangler versions upload`).
+  "workers_dev": true,
+  "preview_urls": true,
+
+  // Static Assets: the built React app is served straight from Cloudflare's edge.
+  // Unknown paths fall back to index.html so client-side routing works.
+  // Requests to /api/* always run the Worker first.
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+
+  // Plain-text environment variables (visible in the dashboard, committed to git).
+  // Secrets are different: set them with `npx wrangler secret put DEMO_SECRET`
+  // (locally they come from .dev.vars).
+  "vars": {
+    "APP_NAME": "Cloudflare Feature Lab",
+    "ENVIRONMENT": "production",
+    // Used by the Analytics Engine page to query its SQL API (with the
+    // CF_ANALYTICS_TOKEN secret). Account IDs aren't secret.
+    "CF_ACCOUNT_ID": "55ba65959fb83e31d6c75bc0d0597aef"
+  },
+
+  // ── Bindings ────────────────────────────────────────────────────────────
+  // A binding gives the Worker a ready-made client on `env` (env.KV, env.DB,
+  // env.BUCKET). The first `wrangler deploy` created these resources; their
+  // IDs are pinned here so later deploys always reuse them. `npm run dev`
+  // simulates them locally in .wrangler/state.
+
+  // Workers KV: global key-value store, optimised for reads.
+  "kv_namespaces": [{ "binding": "KV", "id": "229b564a21bf4cde801c022ffebc1330" }],
+
+  // D1: serverless SQLite. Schema changes live in ./migrations.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cf-feature-lab-db",
+      "database_id": "e410869b-0c3c-4d1c-b96d-2ce23ae0637a",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // R2: S3-compatible object storage with no egress fees.
+  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "cf-feature-lab-files" }],
+
+  // Workers AI: run models on Cloudflare's GPUs. There's no local simulator,
+  // so even `npm run dev` calls the real service (it counts toward your
+  // free allowance of 10,000 neurons per day).
+  "ai": { "binding": "AI", "remote": true },
+
+  // Vectorize: vector database. Created with
+  //   wrangler vectorize create cf-feature-lab-notes --dimensions=768 --metric=cosine
+  // `remote: true` makes local dev use the real index too.
+  "vectorize": [
+    { "binding": "VECTORIZE", "index_name": "cf-feature-lab-notes", "remote": true }
+  ],
+
+  // Queues: producers send messages, consumers receive them in batches.
+  // This Worker is both. Messages that fail max_retries times go to the
+  // dead-letter queue, which this Worker also consumes.
+  "queues": {
+    "producers": [{ "binding": "JOBS", "queue": "cf-feature-lab-jobs" }],
+    "consumers": [
+      {
+        "queue": "cf-feature-lab-jobs",
+        "max_batch_size": 5,       // deliver up to 5 messages at once...
+        "max_batch_timeout": 2,    // ...or whatever has arrived after 2 seconds
+        "max_retries": 3,
+        "dead_letter_queue": "cf-feature-lab-dlq"
+      },
+      { "queue": "cf-feature-lab-dlq", "max_batch_size": 10, "max_batch_timeout": 2 }
+    ]
+  },
+
+  // Workflows: durable multi-step programs. Each step's result is saved, so
+  // a crash or retry resumes from the last completed step.
+  "workflows": [
+    { "name": "cf-feature-lab-onboarding", "binding": "ONBOARDING", "class_name": "OnboardingWorkflow" }
+  ],
+
+  // Cron Triggers: run the `scheduled` handler every 30 minutes (UTC).
+  // The free plan allows up to 5 cron triggers per account.
+  "triggers": { "crons": ["*/30 * * * *"] },
+
+  // Rate Limiting: counters kept in each Cloudflare location. `period` must
+  // be 10 or 60 seconds. namespace_id is any number unique within your account.
+  "ratelimits": [
+    // Protects every write and AI endpoint: 30 per minute per visitor IP.
+    { "name": "WRITE_LIMITER", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } },
+    // A deliberately tight limiter for the demo page: 5 per 10 seconds.
+    { "name": "DEMO_LIMITER", "namespace_id": "1002", "simple": { "limit": 5, "period": 10 } }
+  ],
+
+  // Workers Analytics Engine: write unlimited-cardinality data points from
+  // code and query them with SQL. The dataset is created on first write.
+  "analytics_engine_datasets": [{ "binding": "ANALYTICS", "dataset": "cf_feature_lab_requests" }],
+
+  // Images: resize, convert and transform images in a Worker.
+  "images": { "binding": "IMAGES" },
+
+  // Hyperdrive: connection pooling + query caching in front of an external
+  // Postgres (here: Neon). Created with `wrangler hyperdrive create`, using
+  // Neon's direct (unpooled) URL. Hyperdrive does the pooling itself.
+  // Local dev connects straight to Neon. vite.config.ts reads the URL from .env.local.
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "59279c77f9a94d7cae37c3c942994206" }],
+
+  // Browser Rendering: headless Chrome on Cloudflare, driven with Puppeteer.
+  // `remote: true` makes local dev use Cloudflare's browsers too. Free plan:
+  // 10 browser-minutes per day, 3 concurrent browsers.
+  "browser": { "binding": "BROWSER", "remote": true },
+
+  // Durable Objects: classes exported from worker/index.ts. Each *instance*
+  // (picked by name) is a single-threaded actor with its own SQLite storage.
+  "durable_objects": {
+    "bindings": [
+      { "name": "COUNTER", "class_name": "Counter" },
+      { "name": "CHAT_ROOM", "class_name": "ChatRoom" },
+      { "name": "ALARM_CLOCK", "class_name": "AlarmClock" }
+    ]
+  },
+  // DO classes are versioned with migrations. `new_sqlite_classes` gives them
+  // SQLite-backed storage, which is the only kind available on the free plan.
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Counter", "ChatRoom", "AlarmClock"] }
+  ],
+
+  // Version metadata: tells the Worker which deployed version is running.
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
+
+  // Workers Logs: request logs + console.log output in the dashboard.
+  // head_sampling_rate 1 = keep every request's logs (lower it for busy Workers).
+  "observability": { "enabled": true, "head_sampling_rate": 1 }
+}

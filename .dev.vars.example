@@ -1,0 +1,12 @@
+# Copy to .dev.vars for local secrets (never committed). In production use: npx wrangler secret put DEMO_SECRET
+DEMO_SECRET=local-only-secret-value
+
+# .dev.vars values override "vars" from wrangler.jsonc when running locally
+ENVIRONMENT=development
+
+# Optional: API token with "Account Analytics: Read" for the Analytics Engine page.
+# Production: npx wrangler secret put CF_ANALYTICS_TOKEN
+CF_ANALYTICS_TOKEN=
+
+# Neon pooled connection string (optional, for the Hyperdrive comparison)
+NEON_DATABASE_URL=
