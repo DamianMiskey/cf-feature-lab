@@ -13,7 +13,11 @@
   // Custom Domain: Cloudflare creates the DNS record and certificate for
   // lab.djmiskey.com and points it at this Worker. No origin server involved.
   // workers.dev stays on as a fallback URL.
-  "routes": [{ "pattern": "lab.djmiskey.com", "custom_domain": true }],
+  // admin.djmiskey.com is protected by Cloudflare Access (Zero Trust).
+  "routes": [
+    { "pattern": "lab.djmiskey.com", "custom_domain": true },
+    { "pattern": "admin.djmiskey.com", "custom_domain": true }
+  ],
 
   // Static Assets: the built React app is served straight from Cloudflare's edge.
   // Unknown paths fall back to index.html so client-side routing works.
@@ -36,7 +40,11 @@
     // The site key is public. The secret is a Worker secret (TURNSTILE_SECRET).
     // Local dev overrides both with Cloudflare's test keys in .dev.vars.
     "TURNSTILE_SITEKEY": "0x4AAAAAAFW6OYA24jyEEMzb",
-    "TURNSTILE_HOSTNAMES": "cf-feature-lab.damian-miskey.workers.dev,lab.djmiskey.com"
+    "TURNSTILE_HOSTNAMES": "cf-feature-lab.damian-miskey.workers.dev,lab.djmiskey.com,admin.djmiskey.com",
+    // Cloudflare Access: your Zero Trust team domain and the application's
+    // AUD tag. Neither is secret. The Worker uses them to verify login tokens.
+    "ACCESS_TEAM_DOMAIN": "plain-lab-5273.cloudflareaccess.com",
+    "ACCESS_AUD": "6118196de28c67986fb453ef1b91ae5272d1fcebd0f271c2a338a85495642808"
   },
 
   // ── Bindings ────────────────────────────────────────────────────────────

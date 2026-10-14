@@ -23,16 +23,19 @@ export default defineConfig(async () => {
           bindings: {
             TEST_MIGRATIONS: migrations,
             DEMO_SECRET: "test-secret",
-            // Cloudflare's public Turnstile test keys. siteverify itself is stubbed in test/turnstile-stub.ts.
+            // Cloudflare's public Turnstile test keys. siteverify itself is stubbed in test/outbound-stub.ts.
             TURNSTILE_SITEKEY: "1x00000000000000000000AA",
             TURNSTILE_SECRET: "1x0000000000000000000000000000000AA",
+            // A fake Access team. test/access.test.ts serves its signing keys.
+            ACCESS_TEAM_DOMAIN: "lab-test.cloudflareaccess.com",
+            ACCESS_AUD: "test-aud-tag",
           },
         },
       }),
     ],
     test: {
       include: ["test/**/*.test.ts"],
-      setupFiles: ["./test/apply-migrations.ts", "./test/turnstile-stub.ts"],
+      setupFiles: ["./test/apply-migrations.ts", "./test/outbound-stub.ts"],
     },
   };
 });
