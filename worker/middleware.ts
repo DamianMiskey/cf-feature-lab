@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from "hono";
+import { secureHeaders } from "hono/secure-headers";
 
 type App = { Bindings: Env };
 
@@ -42,3 +43,21 @@ export const limitWrites: MiddlewareHandler<App> = async (c, next) => {
 };
 
 export { clientIp };
+
+// Security headers for API responses (static assets get theirs from
+// public/_headers). Hono's secureHeaders sets nosniff, frame and referrer
+// policies, HSTS and more. Responses are data, never pages, so the CSP blocks everything.
+const apiHeaders = secureHeaders({
+  contentSecurityPolicy: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] },
+  // Same-origin only: no other site can embed the lab's API responses.
+  crossOriginResourcePolicy: "same-origin",
+  referrerPolicy: "strict-origin-when-cross-origin",
+});
+
+export const securityHeaders: MiddlewareHandler<App> = async (c, next) => {
+  // WebSocket upgrade responses come straight from a Durable Object and
+  // their headers can't be changed, so leave them alone.
+  if (c.req.header("upgrade")?.toLowerCase() === "websocket") return next();
+  return apiHeaders(c, next);
+};
+

@@ -3,7 +3,7 @@
 export type Feature = {
   slug: string;
   name: string;
-  category: "Compute" | "Storage & Databases" | "Stateful" | "AI" | "Async" | "Edge" | "Platform";
+  category: "Compute" | "Storage & Databases" | "Stateful" | "AI" | "Async" | "Edge" | "Security" | "Platform";
   summary: string;
   phase: number;
   ready: boolean;
@@ -48,6 +48,8 @@ export const features: Feature[] = [
     summary: "Resize and convert R2 images on the fly." },
   { slug: "browser", name: "Browser Run", category: "Edge", phase: 9, ready: true,
     summary: "Headless Chrome: screenshots, PDFs and scraping." },
+  { slug: "security", name: "Security", category: "Security", phase: 11, ready: true,
+    summary: "Security headers, input hardening, and more layers to come." },
   { slug: "observability", name: "Logs & Observability", category: "Platform", phase: 8, ready: true,
     summary: "Workers Logs, wrangler tail, versions, rollouts and tests." },
   { slug: "pages", name: "Workers vs Pages", category: "Platform", phase: 7, ready: true,

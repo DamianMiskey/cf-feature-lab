@@ -1,7 +1,7 @@
 import { routeAgentRequest } from "agents";
 import { Hono } from "hono";
 import ai from "./routes/ai";
-import { analytics as recordAnalytics, limitWrites } from "./middleware";
+import { analytics as recordAnalytics, limitWrites, securityHeaders } from "./middleware";
 import { handleQueue, type JobMessage } from "./queue";
 import analytics from "./routes/analytics";
 import basics from "./routes/basics";
@@ -27,6 +27,7 @@ const app = new Hono<{ Bindings: Env }>().basePath("/api");
 
 // Middleware runs on every API request, in this order.
 app.use("*", recordAnalytics);
+app.use("*", securityHeaders);
 app.use("*", limitWrites);
 
 app.route("/basics", basics);
