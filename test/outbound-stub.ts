@@ -20,9 +20,9 @@ stubOutbound("https://challenges.cloudflare.com/turnstile/v0/siteverify", (init)
   const real = { metadata: {} }; // looks like a real (non-test-key) result
   const outcomes: Record<string, object> = {
     "fail-token": { success: false, "error-codes": ["invalid-input-response"] },
-    "wrong-action": { success: true, action: "something-else", hostname: "cf-feature-lab.damian-miskey.workers.dev", ...real },
+    "wrong-action": { success: true, action: "something-else", hostname: "lab.djmiskey.com", ...real },
     "wrong-host": { success: true, action: "add-note", hostname: "evil.example", ...real },
-    "real-add-note": { success: true, action: "add-note", hostname: "cf-feature-lab.damian-miskey.workers.dev", ...real },
+    "real-add-note": { success: true, action: "add-note", hostname: "lab.djmiskey.com", ...real },
   };
   // Anything else behaves like Cloudflare's always-pass test key.
   return Response.json(outcomes[String(token)] ?? { success: true, hostname: "example.com", metadata: { result_with_testing_key: true } });
