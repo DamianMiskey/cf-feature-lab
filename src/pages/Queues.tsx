@@ -3,6 +3,7 @@ import { api } from "../api";
 import { CodePeek } from "../components/CodePeek";
 import { Demo, FeaturePage } from "../components/FeatureCard";
 import { usePoll } from "../usePoll";
+import { adminHeaders } from "../adminToken";
 import producerSource from "../../worker/routes/queues.ts?raw";
 import consumerSource from "../../worker/queue.ts?raw";
 
@@ -34,7 +35,12 @@ export function Queues() {
     } catch (e) { setError((e as Error).message); }
   };
 
-  const clear = async () => { await api("/queues/jobs", { method: "DELETE" }); load(); };
+  // Clearing every job is admin-only (token from the Security page).
+  const clear = async () => {
+    setError("");
+    try { await api("/queues/jobs", { method: "DELETE", headers: adminHeaders() }); load(); }
+    catch (e) { setError(`${(e as Error).message}: enter the admin token on the Security page first.`); }
+  };
 
   return (
     <FeaturePage
@@ -59,7 +65,7 @@ export function Queues() {
           {KINDS.map((k) => (
             <button key={k.kind} className={k.kind === "flaky" ? "" : "ghost"} title={k.help} onClick={() => send(k.kind, k.count)}>{k.label}</button>
           ))}
-          <button className="ghost" onClick={clear}>Clear list</button>
+          <button className="ghost" onClick={clear} title="Admin only">Clear list (admin)</button>
         </div>
         <ul className="small muted">{KINDS.map((k) => <li key={k.kind}><strong>{k.kind}</strong>: {k.help}</li>)}</ul>
         {lastSend && <p className="small">{lastSend}</p>}

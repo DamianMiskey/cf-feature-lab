@@ -3,6 +3,8 @@ import { Demo, FeaturePage, JsonView } from "../components/FeatureCard";
 import { Turnstile } from "../components/Turnstile";
 import turnstileSource from "../../worker/turnstile.ts?raw";
 import { CodePeek } from "../components/CodePeek";
+import adminSource from "../../worker/admin.ts?raw";
+import { adminHeaders, getAdminToken, setAdminToken } from "../adminToken";
 import headersFile from "../../public/_headers?raw";
 
 const HEADERS: [string, string][] = [
@@ -24,6 +26,14 @@ export function Security() {
   const [token, setToken] = useState<string | null>(null);
   const [resetKey, setResetKey] = useState(0);
   const [verdict, setVerdict] = useState<unknown>(null);
+
+  const [adminInput, setAdminInput] = useState(getAdminToken);
+  const [adminResult, setAdminResult] = useState<unknown>(null);
+  const checkAdmin = async (withToken: boolean) => {
+    if (withToken) setAdminToken(adminInput.trim());
+    const res = await fetch("/api/security/admin", { headers: withToken ? adminHeaders() : {} });
+    setAdminResult({ status: res.status, ...(await res.json()) });
+  };
 
   const verify = async (send: string | null) => {
     const res = await fetch("/api/security/turnstile/verify", { method: "POST", headers: { "cf-turnstile-response": send ?? "" } });
@@ -116,10 +126,26 @@ export function Security() {
         <CodePeek file="worker/turnstile.ts" source={turnstileSource} />
       </Demo>
 
+      <Demo title="4. Admin authentication with Secrets Store">
+        <p>
+          Some actions shouldn't be open to every visitor, such as wiping all queue jobs. Those routes need
+          <code> Authorization: Bearer &lt;token&gt;</code>. The expected token isn't in the code or even in this Worker's own
+          secrets. It's in the account-level <strong>Secrets Store</strong> (<code>await env.ADMIN_TOKEN.get()</code>), so several
+          Workers can share it and it can be rotated in one place. The comparison runs in <strong>constant time</strong>, and failed
+          attempts count toward the rate limit, so the token can't be guessed by timing or brute force.
+        </p>
+        <div className="form-row">
+          <label className="grow">Admin token (kept in this tab only)<input type="password" value={adminInput} onChange={(e) => setAdminInput(e.target.value)} autoComplete="off" /></label>
+          <button onClick={() => checkAdmin(true)} disabled={!adminInput.trim()}>Check with token</button>
+          <button className="ghost" onClick={() => checkAdmin(false)}>Try without a token</button>
+          <button className="ghost" onClick={() => { setAdminToken(""); setAdminInput(""); setAdminResult(null); }}>Forget token</button>
+        </div>
+        {adminResult != null && <JsonView value={adminResult} />}
+        <CodePeek file="worker/admin.ts" source={adminSource} />
+      </Demo>
+
       <Demo title="Coming next">
         <ul className="small">
-          <li><strong>Admin authentication</strong>: destructive endpoints need a token, compared in constant time</li>
-          <li><strong>Secrets Store</strong>: account-level secrets shared between Workers</li>
           <li><strong>Cloudflare Access</strong>: a login gate in front of an admin hostname</li>
           <li><strong>djmiskey.com</strong>: WAF custom rules, Bot Fight Mode, edge rate-limiting rules, SSL/TLS settings</li>
         </ul>

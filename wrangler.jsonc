@@ -110,6 +110,13 @@
   // code and query them with SQL. The dataset is created on first write.
   "analytics_engine_datasets": [{ "binding": "ANALYTICS", "dataset": "cf_feature_lab_requests" }],
 
+  // Secrets Store: account-level secrets that several Workers can share.
+  // Store created with `wrangler secrets-store store create cf-feature-lab --remote`.
+  // Read in code with `await env.ADMIN_TOKEN.get()`.
+  "secrets_store_secrets": [
+    { "binding": "ADMIN_TOKEN", "store_id": "d7f8eb10e11c467c9a14fe766717f001", "secret_name": "lab-admin-token" }
+  ],
+
   // Images: resize, convert and transform images in a Worker.
   "images": { "binding": "IMAGES" },
 

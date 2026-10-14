@@ -32,8 +32,10 @@ export const limitWrites: MiddlewareHandler<App> = async (c, next) => {
   const isWrite = method === "POST" || method === "PUT" || method === "DELETE";
   // Browser Rendering GETs cost browser time, so they count too (except the free status call).
   const usesBrowser = c.req.path.startsWith("/api/browser/") && c.req.path !== "/api/browser/status";
+  // Admin routes count too, so a token can't be brute-forced.
+  const isAdmin = c.req.path.startsWith("/api/security/admin");
   // The rate-limit demo uses its own limiter.
-  if ((!isWrite && !usesBrowser) || c.req.path.startsWith("/api/ratelimit")) return next();
+  if ((!isWrite && !usesBrowser && !isAdmin) || c.req.path.startsWith("/api/ratelimit")) return next();
 
   const { success } = await c.env.WRITE_LIMITER.limit({ key: clientIp(c.req.raw) });
   if (!success) {
