@@ -33,7 +33,7 @@ npx wrangler vectorize create-metadata-index cf-feature-lab-notes --propertyName
 
 Phase 5 created two queues once with `npx wrangler queues create cf-feature-lab-jobs` and `… cf-feature-lab-dlq`. Workflows and Cron Triggers need no setup beyond `wrangler.jsonc`.
 
-**Live:** https://cf-feature-lab.damian-miskey.workers.dev
+**Live:** https://lab.djmiskey.com (Workers Custom Domain), also at https://cf-feature-lab.damian-miskey.workers.dev
 **Pages sibling:** https://cf-feature-lab-pages.pages.dev (source in `../cf-feature-lab-pages`)
 
 **Local vs production data:** KV, D1, R2, Durable Objects and Queues each have separate local copies (`.wrangler/state`) and production copies. The Vectorize index is **shared**, because it's a remote binding. Clicking "Sync" locally indexes your *local* notes, so after adding notes in production, sync from the live site.
