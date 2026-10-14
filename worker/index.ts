@@ -17,6 +17,7 @@ import kv from "./routes/kv";
 import queues from "./routes/queues";
 import r2 from "./routes/r2";
 import ratelimit from "./routes/ratelimit";
+import security from "./routes/security";
 import vectorize from "./routes/vectorize";
 import workflows from "./routes/workflows";
 import { runHousekeeping } from "./scheduled";
@@ -47,6 +48,7 @@ app.route("/images", images);
 app.route("/logs", logs);
 app.route("/browser", browserRoutes);
 app.route("/hyperdrive", hyperdrive);
+app.route("/security", security);
 
 app.get("/health", (c) => c.json({ ok: true, time: new Date().toISOString() }));
 

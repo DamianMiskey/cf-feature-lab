@@ -10,3 +10,8 @@ CF_ANALYTICS_TOKEN=
 
 # Neon pooled connection string (optional, for the Hyperdrive comparison)
 NEON_DATABASE_URL=
+
+# Turnstile: Cloudflare's public TEST keys (always pass) for local dev.
+# Production uses the real site key (wrangler.jsonc vars) and secret (wrangler secret put TURNSTILE_SECRET).
+TURNSTILE_SITEKEY=1x00000000000000000000AA
+TURNSTILE_SECRET=1x0000000000000000000000000000000AA

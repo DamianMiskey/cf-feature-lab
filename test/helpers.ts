@@ -2,11 +2,13 @@ import { SELF } from "cloudflare:test";
 
 // SELF is the Worker under test. SELF.fetch() goes through the real fetch
 // handler, including routing and middleware.
-// Each call gets a fresh fake client IP, so the 30-writes-per-minute limiter
+// Each call gets a fresh fake client IP and a Turnstile test token, so the 30-writes-per-minute limiter
 // doesn't trip across a test file. Pass `ip` to test the limiter itself.
 export const call = (path: string, init: RequestInit = {}, ip = crypto.randomUUID()) => {
   const headers = new Headers(init.headers);
   headers.set("cf-connecting-ip", ip);
+  // Public writes need a Turnstile token. The stubbed siteverify accepts this one.
+  if (!headers.has("cf-turnstile-response")) headers.set("cf-turnstile-response", "test-token");
   return SELF.fetch(`https://lab.test/api${path}`, { ...init, headers });
 };
 

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { requireTurnstile } from "../turnstile";
 
 const d1 = new Hono<{ Bindings: Env }>();
 
@@ -16,7 +17,8 @@ d1.get("/notes", async (c) => {
   return c.json({ notes: results, meta });
 });
 
-d1.post("/notes", async (c) => {
+// Public write: needs a Turnstile token so bots can't fill the table.
+d1.post("/notes", requireTurnstile("add-note"), async (c) => {
   const { author, body, tag } = await c.req.json<Partial<Note>>();
   if (!author?.trim() || !body?.trim()) return c.json({ error: "author and body are required" }, 400);
 

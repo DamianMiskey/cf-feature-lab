@@ -26,7 +26,12 @@
     "ENVIRONMENT": "production",
     // Used by the Analytics Engine page to query its SQL API (with the
     // CF_ANALYTICS_TOKEN secret). Account IDs aren't secret.
-    "CF_ACCOUNT_ID": "55ba65959fb83e31d6c75bc0d0597aef"
+    "CF_ACCOUNT_ID": "55ba65959fb83e31d6c75bc0d0597aef",
+    // Turnstile widget (created with `wrangler turnstile widget create`).
+    // The site key is public. The secret is a Worker secret (TURNSTILE_SECRET).
+    // Local dev overrides both with Cloudflare's test keys in .dev.vars.
+    "TURNSTILE_SITEKEY": "0x4AAAAAAFW6OYA24jyEEMzb",
+    "TURNSTILE_HOSTNAMES": "cf-feature-lab.damian-miskey.workers.dev,lab.djmiskey.com"
   },
 
   // ── Bindings ────────────────────────────────────────────────────────────

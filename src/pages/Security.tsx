@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Demo, FeaturePage, JsonView } from "../components/FeatureCard";
+import { Turnstile } from "../components/Turnstile";
+import turnstileSource from "../../worker/turnstile.ts?raw";
+import { CodePeek } from "../components/CodePeek";
 import headersFile from "../../public/_headers?raw";
 
 const HEADERS: [string, string][] = [
@@ -18,6 +21,15 @@ type Probe = Record<string, Record<string, string | null>>;
 export function Security() {
   const [probe, setProbe] = useState<Probe | null>(null);
   const [attacks, setAttacks] = useState<unknown>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [resetKey, setResetKey] = useState(0);
+  const [verdict, setVerdict] = useState<unknown>(null);
+
+  const verify = async (send: string | null) => {
+    const res = await fetch("/api/security/turnstile/verify", { method: "POST", headers: { "cf-turnstile-response": send ?? "" } });
+    setVerdict({ status: res.status, ...(await res.json()) });
+    setResetKey((k) => k + 1);
+  };
 
   const runProbe = async () => {
     const out: Probe = {};
@@ -88,9 +100,24 @@ export function Security() {
         {attacks != null && <JsonView value={attacks} />}
       </Demo>
 
+      <Demo title="3. Turnstile: bot checks without puzzles">
+        <p>
+          Turnstile runs invisible browser checks and only shows a checkbox when it's unsure. The widget gives the page a
+          <strong> token</strong>. The Worker sends it to Cloudflare's <code>siteverify</code> API with the secret key, and accepts
+          the request only if it's valid, unused, issued for <em>this</em> action and <em>this</em> hostname. Adding notes (D1)
+          and uploading files (R2) now require it. Locally, Cloudflare's test keys always pass.
+        </p>
+        <Turnstile action="demo" onToken={setToken} resetKey={resetKey} />
+        <div className="form-row">
+          <button onClick={() => verify(token)} disabled={!token}>Verify my token</button>
+          <button className="ghost" onClick={() => verify(null)}>Send without a token (like a bot)</button>
+        </div>
+        {verdict != null && <JsonView value={verdict} />}
+        <CodePeek file="worker/turnstile.ts" source={turnstileSource} />
+      </Demo>
+
       <Demo title="Coming next">
         <ul className="small">
-          <li><strong>Turnstile</strong>: invisible bot checks on the public forms</li>
           <li><strong>Admin authentication</strong>: destructive endpoints need a token, compared in constant time</li>
           <li><strong>Secrets Store</strong>: account-level secrets shared between Workers</li>
           <li><strong>Cloudflare Access</strong>: a login gate in front of an admin hostname</li>
