@@ -18,6 +18,7 @@ const LEARNING_PATH: [string, string][] = [
   ["cache", "edge caching"],
   ["rate-limiting", "protecting all of the above"],
   ["browser", "a real browser for screenshots, PDFs and scraping"],
+  ["security", "protecting it: headers, input checks, bot checks and auth"],
   ["observability", "seeing it all in production"],
   ["pages", "how the classic Pages product compares"],
 ];

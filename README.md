@@ -56,6 +56,12 @@ Phase 5 created two queues once with `npx wrangler queues create cf-feature-lab-
 
 **Agents SDK:** `worker/agents/LabAgent.ts` is a Durable Object (binding `LabAgent`, migration `v2`) reached at `/agents/lab-agent/<visitor-id>` through `routeAgentRequest()` in `worker/index.ts`. `vite.config.ts` and `vitest.config.ts` include the `agents/vite` plugin to compile `@callable()` decorators. Model: `@cf/zai-org/glm-4.7-flash`, chosen after comparing tool-calling reliability with three other Workers AI models. Chat goes over a WebSocket, so it has its own limiter (`AGENT_LIMITER`, 10 messages per minute).
 
+**Security** (see the Security page):
+- Static assets get headers from `public/_headers`: a strict CSP, HSTS, nosniff, frame denial, referrer and permissions policies. API responses get Hono's `secureHeaders()` with a `default-src 'none'` CSP (`worker/middleware.ts`). WebSocket upgrades are skipped because their headers are immutable.
+- The CSP was verified by loading all 23 pages through the Chrome DevTools Protocol, with zero violations. After adding a new external source (a script, API or image host), extend the CSP in `public/_headers`.
+- Browser Run blocks private, loopback and link-local targets (SSRF). R2 uploads use a type allow-list (no SVG or HTML), and non-viewable files download as attachments.
+- `npm audit`: `basic-ftp` is forced to a patched version with `overrides`. The remaining 3 findings are the unfixable `extract-zip` chain under `@cloudflare/puppeteer`'s Chrome-download tooling, which isn't in the deployed bundle.
+
 **Run one dev server at a time.** Two `npm run dev` processes in this folder share `.wrangler/state` and can break each other. If every `/api` call suddenly fails with "fetch failed" (for example after editing `wrangler.jsonc`), restart `npm run dev`.
 
 Local data (KV, D1, R2) lives in `.wrangler/state/`. Delete that folder to reset.
@@ -70,14 +76,18 @@ The Worker is connected to `github.com/DamianMiskey/cf-feature-lab`. Every push 
 2. runs **`npm test && npm run build`** (a failing test stops the deploy)
 3. runs **`npx wrangler deploy && npx wrangler d1 migrations apply DB --remote`**
 
-Preview builds for other branches are off. If you turn them on, use `npx wrangler versions upload`: it gives each branch build a preview URL but shares production data. `npx wrangler preview` (open beta) needs a `previews` block with separate resources for every binding first.
+Preview builds for other branches are off, and would be of limited use here: **Cloudflare doesn't give preview URLs to Workers that define Durable Object classes**, and this lab has four plus the agent. (`wrangler versions upload` still uploads a version, just without a URL.) `npx wrangler preview` (open beta) needs a `previews` block with separate resources for every binding. Pull requests are checked by GitHub Actions instead (below).
+
+## Pull request checks (GitHub Actions)
+
+`.github/workflows/ci.yml` runs on every PR to `main`: generated-types check (`npm run types:check`), `npm run typecheck`, `npm test` and `npm run build`. `main` is protected, so a red PR can't be merged. `worker-configuration.d.ts` is committed and generated from `.dev.vars.example` with `npm run cf-typegen`. Rerun it after changing `wrangler.jsonc` or adding a secret name.
 
 Secrets (`DEMO_SECRET`, `CF_ANALYTICS_TOKEN`, `NEON_DATABASE_URL`) live on the Worker in Cloudflare, not in the repo, so builds don't need them.
 
 ## Test it
 
 ```bash
-npm test          # 38 integration tests inside workerd: KV, D1, R2, DOs (incl. WebSockets + alarms),
+npm test          # 63 integration tests inside workerd: KV, D1, R2, DOs (incl. WebSockets + alarms),
                   # Queues, Cron, Workflows (mocked AI step + approval event), Cache API, rate limits
 npm run test:watch
 ```

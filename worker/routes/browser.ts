@@ -15,14 +15,40 @@ declare const document: {
   querySelectorAll(selector: string): ArrayLike<El> & Iterable<El>;
 };
 
-// Only render public http(s) pages.
-function targetUrl(raw: string | undefined) {
+// Only render public http(s) pages. Blocking private and loopback addresses
+// stops the browser from being used to probe internal networks (SSRF).
+// Browser Run already can't reach your machine, so this is defence in depth.
+export function targetUrl(raw: string | undefined) {
   try {
     const url = new URL(raw ?? "");
-    return url.protocol === "http:" || url.protocol === "https:" ? url : null;
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return isPublicHost(url.hostname) ? url : null;
   } catch {
     return null;
   }
+}
+
+export function isPublicHost(hostname: string) {
+  // URL normalises tricks like http://2130706433 or http://0x7f.1 to "127.0.0.1".
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (host === "localhost" || /\.(localhost|local|internal|lan|home|corp)$/.test(host)) return false;
+
+  const v4 = host.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/)?.slice(1).map(Number);
+  if (v4) {
+    const [a, b] = v4;
+    return !(
+      a === 0 || a === 10 || a === 127 ||          // "this" network, private, loopback
+      (a === 100 && b >= 64 && b <= 127) ||          // carrier-grade NAT
+      (a === 169 && b === 254) ||                    // link-local, incl. cloud metadata
+      (a === 172 && b >= 16 && b <= 31) ||           // private
+      (a === 192 && b === 168) ||                    // private
+      a >= 224                                       // multicast and reserved
+    );
+  }
+  if (host.includes(":")) {
+    return !(host === "::" || host === "::1" || /^f[cd]/.test(host) || /^fe[89ab]/.test(host) || host.startsWith("::ffff:"));
+  }
+  return true;
 }
 
 // Launching a browser takes a few seconds. Reconnecting to one that's already
@@ -64,12 +90,15 @@ async function getBrowser(env: Env): Promise<{ browser: Browser; reused: boolean
 }
 
 // Open a page, run `fn`, and always release the browser afterwards.
-async function withPage<T>(env: Env, url: URL, width: number, fn: (page: Awaited<ReturnType<Browser["newPage"]>>) => Promise<T>) {
+type Page = Awaited<ReturnType<Browser["newPage"]>>;
+
+async function withPage<T>(env: Env, url: URL, width: number, fn: (page: Page) => Promise<T>, beforeLoad?: (page: Page) => void) {
   const { browser, reused, startMs } = await getBrowser(env);
   const sessionId = browser.sessionId();
   try {
     const page = await browser.newPage();
     await page.setViewport({ width, height: Math.round(width * 0.625) });
+    beforeLoad?.(page);
     const navStarted = Date.now();
     await page.goto(url.toString(), { waitUntil: "networkidle2", timeout: 20_000 });
     const result = await fn(page);
@@ -122,6 +151,13 @@ browserRoutes.get("/pdf", async (c) => {
 browserRoutes.get("/inspect", async (c) => {
   const url = targetUrl(c.req.query("url"));
   if (!url) return c.json({ error: "Pass ?url=https://…" }, 400);
+  // Collect the page's console errors and uncaught exceptions. CSP violations
+  // show up here too, which makes this handy for checking security headers.
+  const consoleErrors: string[] = [];
+  const listen = (page: Page) => {
+    page.on("console", (msg) => { if (msg.type() === "error") consoleErrors.push(msg.text().slice(0, 300)); });
+    page.on("pageerror", (err) => consoleErrors.push(`Uncaught: ${String(err).slice(0, 300)}`));
+  };
   const { result, meta } = await withPage(c.env, url, 1280, (page) =>
     // This function runs in the browser, not the Worker, so it can use the DOM.
     page.evaluate(() => ({
@@ -133,8 +169,9 @@ browserRoutes.get("/inspect", async (c) => {
       scripts: document.scripts.length,
       words: document.body.innerText.split(/\s+/).filter(Boolean).length,
     })),
+    listen,
   );
-  return c.json({ url: url.toString(), ...result, ...meta });
+  return c.json({ url: url.toString(), ...result, consoleErrors: consoleErrors.slice(0, 20), ...meta });
 });
 
 // Account limits and sessions currently open. These calls don't use browser time.

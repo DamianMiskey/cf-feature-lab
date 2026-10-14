@@ -21,6 +21,7 @@ import { Pages } from "./pages/Pages";
 import { Planned } from "./pages/Planned";
 import { Queues } from "./pages/Queues";
 import { R2 } from "./pages/R2";
+import { Security } from "./pages/Security";
 import { RateLimiting } from "./pages/RateLimiting";
 import { Vectorize } from "./pages/Vectorize";
 import { Workflows } from "./pages/Workflows";
@@ -49,6 +50,7 @@ const pages: Record<string, ComponentType> = {
   browser: BrowserRun,
   hyperdrive: Hyperdrive,
   agents: Agent,
+  security: Security,
 };
 
 function Routes() {
