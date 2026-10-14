@@ -43,8 +43,8 @@
     "TURNSTILE_HOSTNAMES": "cf-feature-lab.damian-miskey.workers.dev,lab.djmiskey.com,admin.djmiskey.com",
     // Cloudflare Access: your Zero Trust team domain and the application's
     // AUD tag. Neither is secret. The Worker uses them to verify login tokens.
-    "ACCESS_TEAM_DOMAIN": "",
-    "ACCESS_AUD": ""
+    "ACCESS_TEAM_DOMAIN": "plain-lab-5273.cloudflareaccess.com",
+    "ACCESS_AUD": "6118196de28c67986fb453ef1b91ae5272d1fcebd0f271c2a338a85495642808"
   },
 
   // ── Bindings ────────────────────────────────────────────────────────────
