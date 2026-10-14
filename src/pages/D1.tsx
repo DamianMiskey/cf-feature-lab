@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import { CodePeek } from "../components/CodePeek";
 import { Demo, FeaturePage, JsonView } from "../components/FeatureCard";
+import { Turnstile } from "../components/Turnstile";
 import source from "../../worker/routes/d1.ts?raw";
 import migration from "../../migrations/0001_notes.sql?raw";
 
@@ -28,8 +29,16 @@ export function D1() {
     try { await fn(); } catch (e) { setError((e as Error).message); }
   };
 
+  // Public writes need a Turnstile token (see the Security page).
+  const [token, setToken] = useState<string | null>(null);
+  const [resetKey, setResetKey] = useState(0);
+
   const add = guard(async () => {
-    await api("/d1/notes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(form) });
+    try {
+      await api("/d1/notes", { method: "POST", headers: { "content-type": "application/json", "cf-turnstile-response": token ?? "" }, body: JSON.stringify(form) });
+    } finally {
+      setResetKey((k) => k + 1); // tokens are single-use
+    }
     setForm({ ...form, body: "" });
     await refresh();
   });
@@ -57,11 +66,12 @@ export function D1() {
       {error && <p className="error">{error}</p>}
 
       <Demo title="Insert a row">
+        <Turnstile action="add-note" onToken={setToken} resetKey={resetKey} />
         <div className="form-row">
           <label>Author<input value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} /></label>
           <label className="grow">Note<input value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} /></label>
           <label>Tag<input value={form.tag} onChange={(e) => setForm({ ...form, tag: e.target.value })} placeholder="general" /></label>
-          <button onClick={add} disabled={!form.author || !form.body}>Insert</button>
+          <button onClick={add} disabled={!form.author || !form.body || !token}>Insert</button>
         </div>
       </Demo>
 

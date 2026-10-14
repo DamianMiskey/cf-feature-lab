@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { CodePeek } from "../components/CodePeek";
 import { Demo, FeaturePage, JsonView } from "../components/FeatureCard";
+import { Turnstile } from "../components/Turnstile";
 import source from "../../worker/routes/r2.ts?raw";
 
 type Obj = { key: string; size: number; uploaded: string; contentType?: string; customMetadata?: Record<string, string> };
@@ -19,6 +20,9 @@ export function R2() {
   const refresh = () => api<{ objects: Obj[] }>("/r2").then((r) => setObjects(r.objects)).catch((e) => setError(e.message));
   useEffect(() => { refresh(); }, []);
 
+  const [token, setToken] = useState<string | null>(null);
+  const [resetKey, setResetKey] = useState(0);
+
   const upload = async () => {
     const file = fileInput.current?.files?.[0];
     if (!file) return;
@@ -26,13 +30,14 @@ export function R2() {
     try {
       await api(`/r2/${encodeURIComponent(file.name)}?note=${encodeURIComponent(note)}`, {
         method: "PUT",
-        headers: { "content-type": file.type || "application/octet-stream" },
+        headers: { "content-type": file.type || "application/octet-stream", "cf-turnstile-response": token ?? "" },
         body: file,
       });
       fileInput.current!.value = "";
       await refresh();
     } catch (e) { setError((e as Error).message); }
     setBusy(false);
+    setResetKey((k) => k + 1); // tokens are single-use
   };
 
   // Fetch with a Range header to prove R2 can serve partial content (status 206).
@@ -75,11 +80,12 @@ export function R2() {
       {error && <p className="error">{error}</p>}
 
       <Demo title="Upload a file (max 10 MB)">
+        <Turnstile action="upload" onToken={setToken} resetKey={resetKey} />
         <p>The browser PUTs the raw file to the Worker, which streams it straight into <code>BUCKET.put()</code> without buffering it.</p>
         <div className="form-row">
           <input type="file" ref={fileInput} />
           <label className="grow">Custom metadata: note<input value={note} onChange={(e) => setNote(e.target.value)} placeholder="optional" /></label>
-          <button onClick={upload} disabled={busy}>{busy ? "Uploading…" : "Upload"}</button>
+          <button onClick={upload} disabled={busy || !token}>{busy ? "Uploading…" : "Upload"}</button>
         </div>
       </Demo>
 

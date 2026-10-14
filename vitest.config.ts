@@ -19,12 +19,20 @@ export default defineConfig(async () => {
         remoteBindings: false,
         // Pass the migrations to the setup file through a test-only binding.
         // DEMO_SECRET is set here too, so tests pass on CI where .dev.vars doesn't exist.
-        miniflare: { bindings: { TEST_MIGRATIONS: migrations, DEMO_SECRET: "test-secret" } },
+        miniflare: {
+          bindings: {
+            TEST_MIGRATIONS: migrations,
+            DEMO_SECRET: "test-secret",
+            // Cloudflare's public Turnstile test keys. siteverify itself is stubbed in test/turnstile-stub.ts.
+            TURNSTILE_SITEKEY: "1x00000000000000000000AA",
+            TURNSTILE_SECRET: "1x0000000000000000000000000000000AA",
+          },
+        },
       }),
     ],
     test: {
       include: ["test/**/*.test.ts"],
-      setupFiles: ["./test/apply-migrations.ts"],
+      setupFiles: ["./test/apply-migrations.ts", "./test/turnstile-stub.ts"],
     },
   };
 });

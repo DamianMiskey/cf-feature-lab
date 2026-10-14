@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { requireTurnstile } from "../turnstile";
 
 const r2 = new Hono<{ Bindings: Env }>();
 
@@ -39,7 +40,8 @@ r2.get("/", async (c) => {
 
 // Upload: the request body streams straight into R2 without being buffered in
 // the Worker's memory.
-r2.put("/:name", async (c) => {
+// Public write: needs a Turnstile token.
+r2.put("/:name", requireTurnstile("upload"), async (c) => {
   const size = Number(c.req.header("content-length") ?? 0);
   if (!size) return c.json({ error: "Empty upload or missing Content-Length" }, 400);
   if (size > MAX_UPLOAD) return c.json({ error: "Demo uploads are limited to 10 MB" }, 413);

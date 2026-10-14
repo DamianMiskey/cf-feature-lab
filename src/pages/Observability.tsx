@@ -73,7 +73,7 @@ npx wrangler tail --search "lab.demo"`}</pre>
 
       <Demo title="4. Testing: the other half of observability">
         <p>
-          <code>npm test</code> runs 63 integration tests <em>inside workerd</em> (the real Workers runtime) with
+          <code>npm test</code> runs 71 integration tests <em>inside workerd</em> (the real Workers runtime) with
           <code> @cloudflare/vitest-plugin</code>. They cover KV, D1, R2, Durable Objects (including WebSockets and alarms),
           Queues, Cron, Workflows (with mocked steps and events), caching and rate limits. Each test file gets isolated
           storage, and nothing touches your real account.
