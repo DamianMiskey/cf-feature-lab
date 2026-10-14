@@ -10,6 +10,11 @@
   "workers_dev": true,
   "preview_urls": true,
 
+  // Custom Domain: Cloudflare creates the DNS record and certificate for
+  // lab.djmiskey.com and points it at this Worker. No origin server involved.
+  // workers.dev stays on as a fallback URL.
+  "routes": [{ "pattern": "lab.djmiskey.com", "custom_domain": true }],
+
   // Static Assets: the built React app is served straight from Cloudflare's edge.
   // Unknown paths fall back to index.html so client-side routing works.
   // Requests to /api/* always run the Worker first.
