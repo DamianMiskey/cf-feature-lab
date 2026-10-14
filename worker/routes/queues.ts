@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { requireAdmin } from "../admin";
 import type { JobKind, JobMessage } from "../queue";
 
 const queues = new Hono<{ Bindings: Env }>();
@@ -32,7 +33,8 @@ queues.get("/jobs", async (c) => {
   return c.json({ jobs: results.map((j) => ({ ...j, result: j.result ? JSON.parse(j.result) : null })) });
 });
 
-queues.delete("/jobs", async (c) => {
+// Wiping every job is admin-only.
+queues.delete("/jobs", requireAdmin, async (c) => {
   await c.env.DB.prepare("DELETE FROM jobs").run();
   return c.json({ ok: true });
 });

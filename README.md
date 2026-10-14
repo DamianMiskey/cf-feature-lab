@@ -61,6 +61,7 @@ Phase 5 created two queues once with `npx wrangler queues create cf-feature-lab-
 - The CSP was verified by loading all 23 pages through the Chrome DevTools Protocol, with zero violations. After adding a new external source (a script, API or image host), extend the CSP in `public/_headers`.
 - Browser Run blocks private, loopback and link-local targets (SSRF). R2 uploads use a type allow-list (no SVG or HTML), and non-viewable files download as attachments.
 - **Turnstile** protects public writes (D1 `POST /api/d1/notes`, R2 uploads): `worker/turnstile.ts` checks the token with `siteverify` (10 s timeout), and requires the expected **action** and an allowed **hostname** (`TURNSTILE_HOSTNAMES`). The widget was created with `npx wrangler turnstile widget create` (the CLI side of Turnstile Spin) for the production hostnames only. The secret is the `TURNSTILE_SECRET` Worker secret. Local dev and tests use Cloudflare's public test keys (in `.dev.vars` / `vitest.config.ts`), and tests stub `siteverify` (`test/turnstile-stub.ts`). The agent's `addNote` tool writes server-side and is covered by the agent's own rate limit instead.
+- **Admin auth**: admin-only routes (`GET /api/security/admin`, `DELETE /api/queues/jobs`) need `Authorization: Bearer <token>` (`worker/admin.ts`). The comparison runs in constant time (SHA-256 + `crypto.subtle.timingSafeEqual`), the check fails closed (503) if the secret is missing, and attempts count toward the rate limit. The token is in the account-level **Secrets Store** `cf-feature-lab` (`d7f8eb10…`) as `lab-admin-token`, bound as `ADMIN_TOKEN`. Set or rotate it with `npx wrangler secrets-store secret create d7f8eb10e11c467c9a14fe766717f001 --name lab-admin-token --scopes workers --remote` (it prompts for the value). The local dev value is the non-secret `local-admin-token-not-secret`.
 - `npm audit`: `basic-ftp` is forced to a patched version with `overrides`. The remaining 3 findings are the unfixable `extract-zip` chain under `@cloudflare/puppeteer`'s Chrome-download tooling, which isn't in the deployed bundle.
 
 **Run one dev server at a time.** Two `npm run dev` processes in this folder share `.wrangler/state` and can break each other. If every `/api` call suddenly fails with "fetch failed" (for example after editing `wrangler.jsonc`), restart `npm run dev`.
@@ -88,7 +89,7 @@ Secrets (`DEMO_SECRET`, `CF_ANALYTICS_TOKEN`, `NEON_DATABASE_URL`) live on the W
 ## Test it
 
 ```bash
-npm test          # 71 integration tests inside workerd: KV, D1, R2, DOs (incl. WebSockets + alarms),
+npm test          # 74 integration tests inside workerd: KV, D1, R2, DOs (incl. WebSockets + alarms),
                   # Queues, Cron, Workflows (mocked AI step + approval event), Cache API, rate limits
 npm run test:watch
 ```
