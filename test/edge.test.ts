@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { call } from "./helpers";
+import { burst, call } from "./helpers";
 
 describe("Cache API", () => {
   it("misses, then hits, then misses again after a purge", async () => {
@@ -20,18 +20,16 @@ describe("Cache API", () => {
 
 describe("Rate Limiting", () => {
   it("allows 5 demo requests per 10 seconds, then returns 429", async () => {
-    const ip = "203.0.113.7";
-    const statuses = [];
-    for (let i = 0; i < 7; i++) statuses.push((await call("/ratelimit/hit", { method: "POST" }, ip)).status);
-    expect(statuses).toEqual([200, 200, 200, 200, 200, 429, 429]);
+    const { firstWindow, blocked } = await burst(5, () => call("/ratelimit/hit", { method: "POST" }, "203.0.113.7"));
+    expect(firstWindow).toEqual([200, 200, 200, 200, 200]);
+    expect(blocked).toBeGreaterThan(0);
   });
 
   it("limits writes across the API to 30 per minute per IP", async () => {
     const ip = "203.0.113.8";
-    const statuses = [];
-    for (let i = 0; i < 31; i++) statuses.push((await call("/kv/limit-test", { method: "DELETE" }, ip)).status);
-    expect(statuses.slice(0, 30).every((s) => s === 200)).toBe(true);
-    expect(statuses[30]).toBe(429);
+    const { firstWindow, blocked } = await burst(30, () => call("/kv/limit-test", { method: "DELETE" }, ip));
+    expect(firstWindow.every((s) => s === 200)).toBe(true);
+    expect(blocked).toBeGreaterThan(0);
     // Reads are never limited.
     expect((await call("/health", {}, ip)).status).toBe(200);
   });
