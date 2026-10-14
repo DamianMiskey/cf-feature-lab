@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Demo, FeaturePage, JsonView } from "../components/FeatureCard";
 import { Turnstile } from "../components/Turnstile";
 import turnstileSource from "../../worker/turnstile.ts?raw";
 import { CodePeek } from "../components/CodePeek";
 import adminSource from "../../worker/admin.ts?raw";
+import accessSource from "../../worker/access.ts?raw";
 import { adminHeaders, getAdminToken, setAdminToken } from "../adminToken";
 import headersFile from "../../public/_headers?raw";
 
@@ -33,6 +34,15 @@ export function Security() {
     if (withToken) setAdminToken(adminInput.trim());
     const res = await fetch("/api/security/admin", { headers: withToken ? adminHeaders() : {} });
     setAdminResult({ status: res.status, ...(await res.json()) });
+  };
+
+  // Cloudflare Access: who does the Worker see?
+  const [whoami, setWhoami] = useState<{ host: string; access: { email?: string; expiresAt?: string } | null; accessConfigured: boolean } | null>(null);
+  const [accessAdmin, setAccessAdmin] = useState<unknown>(null);
+  useEffect(() => { fetch("/api/security/whoami").then((r) => r.json()).then(setWhoami).catch(() => {}); }, []);
+  const adminViaAccess = async () => {
+    const res = await fetch("/api/security/admin"); // no token: only Access can let this in
+    setAccessAdmin({ status: res.status, ...(await res.json()) });
   };
 
   const verify = async (send: string | null) => {
@@ -144,10 +154,35 @@ export function Security() {
         <CodePeek file="worker/admin.ts" source={adminSource} />
       </Demo>
 
+      <Demo title="5. Cloudflare Access: a login in front of a hostname">
+        <p>
+          <strong>admin.djmiskey.com</strong> runs this same Worker, but Cloudflare <strong>Access</strong> (Zero Trust) sits in front
+          of it. Before any request reaches the Worker, Access asks you to log in (a one-time code sent to an allowed email).
+          Then it forwards each request with a signed JWT in <code>Cf-Access-Jwt-Assertion</code>. The Worker verifies its
+          signature, issuer and audience, and a valid login counts as admin, with no token needed. On any other hostname
+          there's no Access token, and a faked header fails verification.
+        </p>
+        {whoami && (
+          <p className="small">
+            You're on <code>{whoami.host}</code>.{" "}
+            {whoami.access
+              ? <>Access says you're <strong>{whoami.access.email}</strong> (login valid until {whoami.access.expiresAt ? new Date(whoami.access.expiresAt).toLocaleTimeString() : "?"}).</>
+              : whoami.accessConfigured
+                ? <>No Access login on this hostname. Open <a href="https://admin.djmiskey.com/security">admin.djmiskey.com/security</a> to log in.</>
+                : <>Access isn't configured on this Worker yet.</>}
+          </p>
+        )}
+        <div className="form-row">
+          <button onClick={adminViaAccess}>Call the admin route with no token</button>
+          <span className="small muted">Works only on admin.djmiskey.com after logging in. Anywhere else: 401.</span>
+        </div>
+        {accessAdmin != null && <JsonView value={accessAdmin} />}
+        <CodePeek file="worker/access.ts" source={accessSource} />
+      </Demo>
+
       <Demo title="Coming next">
         <ul className="small">
-          <li><strong>Cloudflare Access</strong>: a login gate in front of an admin hostname</li>
-          <li><strong>djmiskey.com</strong>: WAF custom rules, Bot Fight Mode, edge rate-limiting rules, SSL/TLS settings</li>
+          <li><strong>Zone features on djmiskey.com</strong>: live WAF and edge rate-limit demos on this page</li>
         </ul>
       </Demo>
     </FeaturePage>
