@@ -5,14 +5,15 @@
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
 
-  // Serve on <name>.<subdomain>.workers.dev, and give every uploaded version
-  // its own preview URL (try `npx wrangler versions upload`).
-  "workers_dev": true,
-  "preview_urls": true,
+  // workers.dev is OFF: zone protections (WAF rules, edge rate limits, TLS
+  // policy) only apply to hostnames in the djmiskey.com zone, so everything
+  // goes through lab.djmiskey.com. Set to true to bring the fallback URL back.
+  // (Preview URLs aren't available anyway for Workers with Durable Objects.)
+  "workers_dev": false,
+  "preview_urls": false,
 
   // Custom Domain: Cloudflare creates the DNS record and certificate for
   // lab.djmiskey.com and points it at this Worker. No origin server involved.
-  // workers.dev stays on as a fallback URL.
   // admin.djmiskey.com is protected by Cloudflare Access (Zero Trust).
   "routes": [
     { "pattern": "lab.djmiskey.com", "custom_domain": true },
@@ -40,7 +41,7 @@
     // The site key is public. The secret is a Worker secret (TURNSTILE_SECRET).
     // Local dev overrides both with Cloudflare's test keys in .dev.vars.
     "TURNSTILE_SITEKEY": "0x4AAAAAAFW6OYA24jyEEMzb",
-    "TURNSTILE_HOSTNAMES": "cf-feature-lab.damian-miskey.workers.dev,lab.djmiskey.com,admin.djmiskey.com",
+    "TURNSTILE_HOSTNAMES": "lab.djmiskey.com,admin.djmiskey.com",
     // Cloudflare Access: your Zero Trust team domain and the application's
     // AUD tag. Neither is secret. The Worker uses them to verify login tokens.
     "ACCESS_TEAM_DOMAIN": "plain-lab-5273.cloudflareaccess.com",

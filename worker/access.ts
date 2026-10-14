@@ -5,7 +5,7 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 // `Cf-Access-Jwt-Assertion` header. Always verify it in the Worker:
 // signature (Access's public keys), issuer (your team domain) and audience
 // (this application's AUD tag). Otherwise anyone who reaches the Worker
-// another way, such as lab.djmiskey.com or workers.dev, could fake the header.
+// another way, such as lab.djmiskey.com, could fake the header.
 export const ACCESS_HEADER = "cf-access-jwt-assertion";
 
 // Keep the key set per isolate. jose caches keys and refetches on rotation.

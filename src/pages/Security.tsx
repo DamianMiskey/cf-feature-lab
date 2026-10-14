@@ -45,6 +45,33 @@ export function Security() {
     setAccessAdmin({ status: res.status, ...(await res.json()) });
   };
 
+  // Zone features: these run against whatever hostname you're on.
+  const [trace, setTrace] = useState<Record<string, string> | null>(null);
+  const [waf, setWaf] = useState<unknown>(null);
+  const [burstResult, setBurstResult] = useState<Record<string, number> | null>(null);
+  const [bursting, setBursting] = useState(false);
+
+  const loadTrace = async () => {
+    // Cloudflare answers /cdn-cgi/trace itself, for any hostname in a zone.
+    const text = await (await fetch("/cdn-cgi/trace", { cache: "no-store" })).text();
+    setTrace(Object.fromEntries(text.trim().split("\n").map((l) => l.split("=") as [string, string])));
+  };
+  const probeWaf = async () => {
+    const out: Record<string, unknown> = {};
+    for (const path of ["/.env", "/wp-admin/", "/.git/config", "/api/health"]) {
+      const res = await fetch(path, { cache: "no-store" });
+      const body = await res.text();
+      out[path] = { status: res.status, blockedByWaf: body.includes("Sorry, you have been blocked") };
+    }
+    setWaf(out);
+  };
+  const burst = async () => {
+    setBursting(true);
+    const statuses = await Promise.all(Array.from({ length: 30 }, () => fetch("/api/health", { cache: "no-store" }).then((r) => r.status).catch(() => 0)));
+    setBurstResult(statuses.reduce<Record<string, number>>((acc, s) => ({ ...acc, [s]: (acc[s] ?? 0) + 1 }), {}));
+    setBursting(false);
+  };
+
   const verify = async (send: string | null) => {
     const res = await fetch("/api/security/turnstile/verify", { method: "POST", headers: { "cf-turnstile-response": send ?? "" } });
     setVerdict({ status: res.status, ...(await res.json()) });
@@ -73,7 +100,7 @@ export function Security() {
   return (
     <FeaturePage
       title="Security"
-      tagline="Layers of protection: headers, input checks, bot checks, authentication, and (with a domain) Cloudflare's edge security."
+      tagline="Layers of protection: headers, input checks, bot checks, authentication, and Cloudflare's edge security on djmiskey.com."
       docs="https://developers.cloudflare.com/workers/examples/security-headers/"
       whatItIs={<p>
         Security on Cloudflare comes in layers. Some live in <strong>your code</strong>: security headers, input
@@ -180,10 +207,40 @@ export function Security() {
         <CodePeek file="worker/access.ts" source={accessSource} />
       </Demo>
 
-      <Demo title="Coming next">
-        <ul className="small">
-          <li><strong>Zone features on djmiskey.com</strong>: live WAF and edge rate-limit demos on this page</li>
-        </ul>
+      <Demo title="6. Zone features on djmiskey.com">
+        <p>
+          These protections run in Cloudflare's network <strong>before a request reaches the Worker</strong>, and they apply to
+          every hostname in the <code>djmiskey.com</code> zone. They're configured in the dashboard, not in code. That's also
+          why <code>workers.dev</code> is switched off: it isn't in the zone, so none of this protected it.
+        </p>
+        <table className="table">
+          <thead><tr><th>Setting</th><th>What it does here</th></tr></thead>
+          <tbody>
+            <tr><td><strong>WAF custom rule</strong></td><td className="small">Blocks paths that only attackers probe: <code>/.env</code>, <code>/wp-admin</code>, <code>/.git</code></td></tr>
+            <tr><td><strong>Rate limiting rule</strong></td><td className="small">More than 20 <code>/api/</code> requests in 10 s from one IP → blocked for 10 s, at the edge</td></tr>
+            <tr><td><strong>Always Use HTTPS</strong></td><td className="small"><code>http://</code> requests get a 301 to <code>https://</code></td></tr>
+            <tr><td><strong>Minimum TLS 1.2</strong></td><td className="small">TLS 1.0 and 1.1 handshakes are refused</td></tr>
+            <tr><td><strong>Cloudflare Access</strong></td><td className="small">A login in front of <code>admin.djmiskey.com</code> (section 5)</td></tr>
+          </tbody>
+        </table>
+
+        <h3 className="small">Your connection, as Cloudflare sees it</h3>
+        <button className="ghost" onClick={loadTrace}>Read /cdn-cgi/trace</button>
+        {trace && (
+          <p className="small">
+            TLS <strong>{trace.tls}</strong> · HTTP <strong>{trace.http}</strong> · key exchange <strong>{trace.kex}</strong>
+            {trace.kex?.includes("MLKEM") ? " (post-quantum!)" : ""} · data center <strong>{trace.colo}</strong> · country <strong>{trace.loc}</strong>
+          </p>
+        )}
+
+        <h3 className="small">Trigger the WAF rule</h3>
+        <button className="ghost" onClick={probeWaf}>Request /.env, /wp-admin/, /.git/config and /api/health</button>
+        {waf != null && <JsonView value={waf} />}
+
+        <h3 className="small">Trigger the edge rate limit</h3>
+        <p className="small muted">Sends 30 API requests at once. Expect about 20 to pass and the rest to get 429 from Cloudflare's edge. The lab's API is then blocked for you for about 10 seconds.</p>
+        <button className="ghost" onClick={burst} disabled={bursting}>{bursting ? "Sending…" : "Send 30 requests"}</button>
+        {burstResult && <p className="small">{Object.entries(burstResult).map(([code, n]) => `${n} × ${code}`).join(" · ")}</p>}
       </Demo>
     </FeaturePage>
   );
