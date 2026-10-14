@@ -9,11 +9,12 @@
     "preview": "npm run build && vite preview",
     "deploy": "npm test && npm run build && wrangler deploy && npm run db:migrate:remote",
     "typecheck": "tsc -b",
-    "cf-typegen": "wrangler types",
+    "cf-typegen": "wrangler types --env-file .dev.vars.example",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "types:check": "wrangler types --env-file .dev.vars.example --check"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.142",
