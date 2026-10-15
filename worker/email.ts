@@ -48,7 +48,11 @@ export async function handleEmail(message: ForwardableEmailMessage, env: Env) {
   // rejected in production ("original email is not repliable").
   // Never reply to automated mail.
   let replied = false;
-  if (!isAutomated(message.headers, message.from)) {
+  // Cloudflare refuses replies to the address mail is forwarded to ("original
+  // email is not repliable"), seen in production every time we mailed the lab
+  // from the forwarding address. It would also bounce straight back to us, so skip it.
+  const toOwner = message.from.toLowerCase() === (env.EMAIL_FORWARD_TO ?? "").toLowerCase();
+  if (!isAutomated(message.headers, message.from) && !toOwner) {
     try {
       await message.reply(buildReply(message, subject));
       replied = true;

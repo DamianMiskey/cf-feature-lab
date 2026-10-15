@@ -84,6 +84,13 @@ describe("Email Workers", () => {
     expect(decodeWords(buildReplyMime(m, "Re: Hello lab").match(/^Subject: (.*)$/m)![1])).toBe("Re: Hello lab");
   });
 
+  it("doesn't auto-reply to the owner's own forwarding address", async () => {
+    const m = fakeMessage(hello.replace("Alice <alice@example.com>", "Damian <damian.miskey@yahoo.com>"), "damian.miskey@yahoo.com");
+    await deliver(m);
+    expect(m.reply).not.toHaveBeenCalled();
+    expect(m.forward).toHaveBeenCalled();
+  });
+
   it("counts attachments", async () => {
     await deliver(fakeMessage(withAttachment, "bob@example.com"));
     expect(await env.DB.prepare("SELECT attachments, text_preview FROM emails ORDER BY id DESC LIMIT 1").first()).toMatchObject({ attachments: 1, text_preview: expect.stringContaining("See attached.") });
