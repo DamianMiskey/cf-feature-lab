@@ -1,6 +1,6 @@
 import { adminSecretsStore, env } from "cloudflare:test";
 import { describe, expect, it, vi } from "vitest";
-import { isAutomated } from "../worker/email";
+import { buildReply, buildReplyMime, isAutomated } from "../worker/email";
 import worker from "../worker/index";
 import { call } from "./helpers";
 
@@ -43,6 +43,10 @@ Content-Disposition: attachment; filename="notes.txt"
 attachment body
 --b1--`;
 
+// Decode RFC 2047 base64 encoded words, e.g. =?utf-8?B?UmU6IEhp?= → "Re: Hi".
+const decodeWords = (v: string) =>
+  v.replace(/=\?utf-8\?B\?([^?]+)\?=/gi, (_, b64) => new TextDecoder().decode(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))));
+
 const deliver = (m: ReturnType<typeof fakeMessage>) => worker.email(m as unknown as ForwardableEmailMessage, env);
 
 describe("Email Workers", () => {
@@ -55,14 +59,29 @@ describe("Email Workers", () => {
     expect(row?.text_preview).toContain("Does this reach a Worker?");
 
     expect(m.forward).toHaveBeenCalledWith("damian.miskey@yahoo.com", expect.any(Headers));
-    expect(m.reply).toHaveBeenCalledWith(expect.objectContaining({
-      from: "lab@djmiskey.com",
-      subject: "Re: Hello lab",
-      headers: { "Auto-Submitted": "auto-replied", "In-Reply-To": "<abc123@example.com>", References: "<abc123@example.com>" },
-    }));
+    expect(m.reply).toHaveBeenCalledTimes(1);
     // Reply must happen before forward: a forwarded message is no longer repliable.
     expect(m.reply.mock.invocationCallOrder[0]).toBeLessThan(m.forward.mock.invocationCallOrder[0]);
     expect(m.setReject).not.toHaveBeenCalled();
+  });
+
+  it("builds a threaded raw-MIME reply from the receiving address to the sender", () => {
+    const m = fakeMessage(hello) as unknown as ForwardableEmailMessage;
+    expect(buildReply(m, "Hello lab")).toMatchObject({ from: "lab@djmiskey.com", to: "alice@example.com" });
+
+    const raw = buildReplyMime(m, "Hello lab");
+    // mimetext encodes names and subjects as RFC 2047 "encoded words" (=?utf-8?B?…?=).
+    const header = (name: string) => decodeWords(raw.match(new RegExp(`^${name}: (.*)$`, "m"))?.[1] ?? "");
+    expect(header("From")).toBe("Cloudflare Feature Lab <lab@djmiskey.com>");
+    expect(header("To")).toBe("<alice@example.com>");
+    expect(header("Subject")).toBe("Re: Hello lab");
+    expect(header("Message-ID")).toMatch(/@djmiskey\.com>$/);
+    expect(raw).toMatch(/^In-Reply-To: <abc123@example\.com>/m);
+    expect(raw).toMatch(/^References: <abc123@example\.com>/m);
+    expect(raw).toMatch(/^Auto-Submitted: auto-replied/m);
+    expect(raw).toContain("Thanks! Your message reached the Cloudflare Feature Lab.");
+    // Already a reply? Don't stack "Re: Re:".
+    expect(decodeWords(buildReplyMime(m, "Re: Hello lab").match(/^Subject: (.*)$/m)![1])).toBe("Re: Hello lab");
   });
 
   it("counts attachments", async () => {
