@@ -87,6 +87,7 @@ export function Email() {
           <li>A routing rule sends <code>lab@djmiskey.com</code> to the <strong>cf-feature-lab</strong> Worker.</li>
           <li>The Worker's <code>email(message, env)</code> handler runs: parse → D1 → <code>forward()</code> → <code>reply()</code>.</li>
           <li>Forwarding only works to <strong>verified destination addresses</strong>. Replies go only to the sender.</li>
+          <li><strong>Reply rules learned the hard way:</strong> use the documented <code>EmailMessage</code> + raw MIME form (a plain object type-checks but is refused), reply at most once, and expect Cloudflare to refuse replies to your own forwarding address. The Worker skips that case.</li>
         </ol>
       </Demo>
 
