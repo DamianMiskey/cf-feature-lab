@@ -9,6 +9,9 @@ export function loadWebAnalytics() {
   const s = document.createElement("script");
   s.defer = true;
   s.src = "https://static.cloudflareinsights.com/beacon.min.js";
-  s.dataset.cfBeacon = JSON.stringify({ token: TOKEN, spa: true });
+  // Report to this site's own /cdn-cgi/rum, like the auto-injected beacon.
+  // The default endpoint (cloudflareinsights.com) rejects this token's
+  // cross-origin requests (CORS), so measurements would be lost.
+  s.dataset.cfBeacon = JSON.stringify({ token: TOKEN, spa: true, send: { to: "/cdn-cgi/rum" } });
   document.body.appendChild(s);
 }
