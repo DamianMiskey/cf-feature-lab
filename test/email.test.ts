@@ -55,7 +55,13 @@ describe("Email Workers", () => {
     expect(row?.text_preview).toContain("Does this reach a Worker?");
 
     expect(m.forward).toHaveBeenCalledWith("damian.miskey@yahoo.com", expect.any(Headers));
-    expect(m.reply).toHaveBeenCalledWith(expect.objectContaining({ from: "lab@djmiskey.com", subject: "Re: Hello lab", headers: { "Auto-Submitted": "auto-replied" } }));
+    expect(m.reply).toHaveBeenCalledWith(expect.objectContaining({
+      from: "lab@djmiskey.com",
+      subject: "Re: Hello lab",
+      headers: { "Auto-Submitted": "auto-replied", "In-Reply-To": "<abc123@example.com>", References: "<abc123@example.com>" },
+    }));
+    // Reply must happen before forward: a forwarded message is no longer repliable.
+    expect(m.reply.mock.invocationCallOrder[0]).toBeLessThan(m.forward.mock.invocationCallOrder[0]);
     expect(m.setReject).not.toHaveBeenCalled();
   });
 
