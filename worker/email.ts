@@ -1,3 +1,5 @@
+import { EmailMessage } from "cloudflare:email";
+import { createMimeMessage } from "mimetext";
 import PostalMime from "postal-mime";
 
 // Email Workers: Cloudflare Email Routing hands each message sent to
@@ -40,25 +42,15 @@ export async function handleEmail(message: ForwardableEmailMessage, env: Env) {
     )
     .first<{ id: number }>();
 
-  // Reply BEFORE forwarding: Cloudflare allows one reply per message, and a
-  // message that has already been forwarded is no longer repliable
-  // ("original email is not repliable", seen in production).
+  // Reply first (as in Cloudflare's examples): one reply per message.
+  // The documented form is an EmailMessage wrapping raw MIME built with
+  // mimetext. A plain { from, subject, text } object type-checks but is
+  // rejected in production ("original email is not repliable").
   // Never reply to automated mail.
   let replied = false;
   if (!isAutomated(message.headers, message.from)) {
-    const messageId = message.headers.get("message-id");
     try {
-      await message.reply({
-        from: env.EMAIL_ADDRESS,
-        subject: subject.toLowerCase().startsWith("re:") ? subject : `Re: ${subject}`,
-        // Thread the reply under the original in the sender's mail app.
-        headers: { "Auto-Submitted": "auto-replied", ...(messageId ? { "In-Reply-To": messageId, References: messageId } : {}) },
-        text:
-          "Thanks! Your message reached the Cloudflare Feature Lab.\n\n" +
-          "It was received by an Email Worker, stored in a D1 database and forwarded to its owner. " +
-          "This reply was sent automatically.\n\n" +
-          "See how it works: https://lab.djmiskey.com/email",
-      });
+      await message.reply(buildReply(message, subject));
       replied = true;
     } catch (e) {
       // Replies also need the incoming mail to pass DMARC. Log the auth result to diagnose.
@@ -81,4 +73,33 @@ export async function handleEmail(message: ForwardableEmailMessage, env: Env) {
     await env.DB.prepare("UPDATE emails SET forwarded = ?, replied = ? WHERE id = ?").bind(Number(forwarded), Number(replied), row.id).run();
   }
   console.log({ event: "email.received", id: row?.id, forwarded, replied, size: message.rawSize });
+}
+
+// Build the auto-reply as raw MIME: from the address that received the mail,
+// to its sender, threaded under the original via In-Reply-To / References.
+export function buildReply(message: ForwardableEmailMessage, subject: string) {
+  return new EmailMessage(message.to, message.from, buildReplyMime(message, subject));
+}
+
+// The reply's MIME text, separate from EmailMessage so tests can inspect it.
+export function buildReplyMime(message: Pick<ForwardableEmailMessage, "to" | "from" | "headers">, subject: string) {
+  const reply = createMimeMessage();
+  const messageId = message.headers.get("message-id");
+  if (messageId) {
+    reply.setHeader("In-Reply-To", messageId);
+    reply.setHeader("References", messageId);
+  }
+  reply.setHeader("Auto-Submitted", "auto-replied");
+  reply.setSender({ name: "Cloudflare Feature Lab", addr: message.to });
+  reply.setRecipient(message.from);
+  reply.setSubject(subject.toLowerCase().startsWith("re:") ? subject : `Re: ${subject}`);
+  reply.addMessage({
+    contentType: "text/plain",
+    data:
+      "Thanks! Your message reached the Cloudflare Feature Lab.\n\n" +
+      "It was received by an Email Worker, stored in a D1 database and forwarded to its owner. " +
+      "This reply was sent automatically.\n\n" +
+      "See how it works: https://lab.djmiskey.com/email",
+  });
+  return reply.asRaw();
 }
