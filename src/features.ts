@@ -36,6 +36,8 @@ export const features: Feature[] = [
     summary: "Run Worker code on a schedule." },
   { slug: "queues", name: "Queues", category: "Async", phase: 5, ready: true,
     summary: "Send jobs now, process them in the background." },
+  { slug: "email", name: "Email Workers", category: "Async", phase: 12, ready: true,
+    summary: "Receive mail at lab@djmiskey.com in a Worker: parse, store, forward, reply." },
   { slug: "workflows", name: "Workflows", category: "Async", phase: 5, ready: true,
     summary: "Durable multi-step processes with sleeps and retries." },
   { slug: "cache", name: "Cache API", category: "Edge", phase: 6, ready: true,
