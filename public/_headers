@@ -13,6 +13,12 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Cross-Origin-Opener-Policy: same-origin
+  # no-transform: Cloudflare must not modify these responses. Without it,
+  # zone features inject their own scripts (JavaScript Detections, the Web
+  # Analytics beacon, AI Labyrinth links…) and the CSP then blocks them. The
+  # page you get is exactly what this repo ships. Web Analytics is installed
+  # manually in index.html instead.
+  Cache-Control: no-transform
 
 # Hashed build output never changes, so browsers can cache it for a year.
 /assets/*
