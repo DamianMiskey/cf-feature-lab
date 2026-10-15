@@ -25,6 +25,7 @@
     "hono": "^4.13.13",
     "jose": "^6.2.12",
     "pg": "^8.23.1",
+    "postal-mime": "4.0.2",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "workers-ai-provider": "^4.0.0",

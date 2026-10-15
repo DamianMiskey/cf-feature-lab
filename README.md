@@ -91,7 +91,7 @@ Secrets (`DEMO_SECRET`, `CF_ANALYTICS_TOKEN`, `NEON_DATABASE_URL`) live on the W
 ## Test it
 
 ```bash
-npm test          # 81 integration tests inside workerd: KV, D1, R2, DOs (incl. WebSockets + alarms),
+npm test          # 87 integration tests inside workerd: KV, D1, R2, DOs (incl. WebSockets + alarms),
                   # Queues, Cron, Workflows (mocked AI step + approval event), Cache API, rate limits
 npm run test:watch
 ```
@@ -133,6 +133,7 @@ For each feature: read the page, use the demo, open "Show Worker code", then fin
 - [x] **Phase 5: Async.** Cron Triggers (housekeeping every 30 min), Queues (batching, retries, dead-letter queue), Workflows (durable steps, sleep, retries, waitForEvent approval)
 - [x] **Phase 6: Edge extras.** Cache API (HIT/MISS/purge), Rate Limiting (demo + 30 writes/min/IP on the whole API), Analytics Engine (a data point per request + SQL queries), Images (transform R2 images). Skipped: Hyperdrive (needs an external Postgres), Browser Rendering
 - [x] **Phase 7: Pages.** Sibling project `../cf-feature-lab-pages` (Pages Functions, `_redirects`, `_headers`, 404, shared KV, service binding back to this Worker, branch preview deploys), plus the Workers vs Pages comparison page
+- [x] **Phase 12: Email Workers.** `lab@djmiskey.com` is routed to the Worker's `email()` handler (`worker/email.ts`): parse with `postal-mime` → store in D1 (`migrations/0003_emails.sql`) → `forward()` to the verified address → `reply()` (never to automated mail, RFC 3834 signals). The inbox API is admin-only, and the count is public.
 - [x] **Phase 10: Agents + Git.** `LabAgent` (Agents SDK + `@cloudflare/ai-chat`): streaming chat on Workers AI via AI Gateway, server tools over D1/DOs/R2, a human-approved `addNote` tool, a browser-side tool, `this.schedule()` reminders, live `setState` sync and `@callable()` RPC. The project is now a Git repo.
 - [x] **Phase 9: Extras.** Hyperdrive in front of a Neon Postgres database (live: ~2,050 ms direct vs 3–8 ms through Hyperdrive), Browser Run (screenshots, PDFs, scraping, warm-session reuse)
 - [x] **Phase 8: Polish.** 28 integration tests at the time (`@cloudflare/vitest-plugin`), Logs & Observability page (Workers Logs, `wrangler tail`, version metadata, gradual rollouts), learning path on the home page

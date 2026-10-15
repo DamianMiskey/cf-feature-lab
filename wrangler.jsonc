@@ -45,7 +45,11 @@
     // Cloudflare Access: your Zero Trust team domain and the application's
     // AUD tag. Neither is secret. The Worker uses them to verify login tokens.
     "ACCESS_TEAM_DOMAIN": "plain-lab-5273.cloudflareaccess.com",
-    "ACCESS_AUD": "6118196de28c67986fb453ef1b91ae5272d1fcebd0f271c2a338a85495642808"
+    "ACCESS_AUD": "6118196de28c67986fb453ef1b91ae5272d1fcebd0f271c2a338a85495642808",
+    // Email Workers: the address Email Routing sends to this Worker, and the
+    // verified destination that receives a forwarded copy.
+    "EMAIL_ADDRESS": "lab@djmiskey.com",
+    "EMAIL_FORWARD_TO": "damian.miskey@yahoo.com"
   },
 
   // ── Bindings ────────────────────────────────────────────────────────────

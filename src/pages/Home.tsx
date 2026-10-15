@@ -12,6 +12,7 @@ const LEARNING_PATH: [string, string][] = [
   ["durable-objects", "strong consistency, WebSockets and alarms (the race test shows why it matters)"],
   ["queues", "moving work into the background"],
   ["workflows", "durable multi-step processes"],
+  ["email", "a third kind of event: incoming email"],
   ["ai", "running models"],
   ["vectorize", "semantic search and RAG, combining AI + D1"],
   ["agents", "everything together: an AI agent with tools, memory, schedules and live state"],

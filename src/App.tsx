@@ -12,6 +12,7 @@ import { Cache } from "./pages/Cache";
 import { Cron } from "./pages/Cron";
 import { D1 } from "./pages/D1";
 import { DurableObjects } from "./pages/DurableObjects";
+import { Email } from "./pages/Email";
 import { Home } from "./pages/Home";
 import { Hyperdrive } from "./pages/Hyperdrive";
 import { Images } from "./pages/Images";
@@ -51,6 +52,7 @@ const pages: Record<string, ComponentType> = {
   hyperdrive: Hyperdrive,
   agents: Agent,
   security: Security,
+  email: Email,
 };
 
 function Routes() {

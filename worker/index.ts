@@ -2,6 +2,7 @@ import { routeAgentRequest } from "agents";
 import { Hono } from "hono";
 import ai from "./routes/ai";
 import { analytics as recordAnalytics, limitWrites, securityHeaders } from "./middleware";
+import { handleEmail } from "./email";
 import { handleQueue, type JobMessage } from "./queue";
 import analytics from "./routes/analytics";
 import basics from "./routes/basics";
@@ -9,6 +10,7 @@ import browserRoutes from "./routes/browser";
 import cache from "./routes/cache";
 import cron from "./routes/cron";
 import d1 from "./routes/d1";
+import email from "./routes/email";
 import hyperdrive from "./routes/hyperdrive";
 import images from "./routes/images";
 import logs from "./routes/logs";
@@ -49,6 +51,7 @@ app.route("/logs", logs);
 app.route("/browser", browserRoutes);
 app.route("/hyperdrive", hyperdrive);
 app.route("/security", security);
+app.route("/email", email);
 
 app.get("/health", (c) => c.json({ ok: true, time: new Date().toISOString() }));
 
@@ -71,6 +74,7 @@ export { OnboardingWorkflow } from "./workflows/OnboardingWorkflow";
 //   fetch     → HTTP requests
 //   scheduled → Cron Triggers
 //   queue     → batches of messages from Queues
+//   email     → incoming mail from Email Routing
 export default {
   // Agent connections (/agents/<agent>/<name>) are routed to the right agent
   // instance first. Everything else goes to the Hono API.
@@ -85,5 +89,10 @@ export default {
 
   async queue(batch, env) {
     await handleQueue(batch, env);
+  },
+
+  // Email Routing delivers mail for lab@djmiskey.com here.
+  async email(message, env) {
+    await handleEmail(message, env);
   },
 } satisfies ExportedHandler<Env, JobMessage>;
