@@ -221,14 +221,14 @@ export function Security() {
             <tr><td><strong>Always Use HTTPS</strong></td><td className="small"><code>http://</code> requests get a 301 to <code>https://</code></td></tr>
             <tr><td><strong>Minimum TLS 1.2</strong></td><td className="small">TLS 1.0 and 1.1 handshakes are refused</td></tr>
             <tr><td><strong>Cloudflare Access</strong></td><td className="small">A login in front of <code>admin.djmiskey.com</code> (section 5)</td></tr>
-            <tr><td><strong>Web Analytics</strong></td><td className="small">Cloudflare injects a privacy-first analytics beacon (no cookies) into every page: real-user page load times and Core Web Vitals. The CSP allows its two domains.</td></tr>
+            <tr><td><strong>Web Analytics</strong></td><td className="small">A privacy-first analytics beacon (no cookies): real-user page load times and Core Web Vitals. Loaded by the app itself and reporting to this site's own <code>/cdn-cgi/rum</code>, so the CSP only allows its script domain.</td></tr>
           </tbody>
         </table>
 
         <p className="small">
           <strong>Scripts Cloudflare adds by itself:</strong> on a zone hostname, some features change your HTML on the way
           out. Web Analytics adds a beacon, and Bot Fight Mode adds an inline <em>JavaScript Detections</em> script. A strict CSP
-          blocks anything it doesn't expect, including these. So either allow each one explicitly (Web Analytics: two domains), or use a
+          blocks anything it doesn't expect, including these. So the lab sends <code>Cache-Control: no-transform</code>, which tells Cloudflare not to modify its pages, and loads Web Analytics itself. Other options: allow each script explicitly, or use a
           per-request <em>nonce</em> in the CSP header, which Cloudflare copies onto its injected scripts. Never fall back to
           <code> 'unsafe-inline'</code>.
         </p>
