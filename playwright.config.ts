@@ -20,7 +20,9 @@ export default defineConfig({
   // Over the network a request can blip; a test that only passes on its
   // retry is still reported as "flaky", not hidden.
   retries: CI || LIVE ? 1 : 0,
-  workers: CI ? 2 : undefined,
+  // Live: two at a time. The zone's edge rate-limiting rule (20 /api/
+  // requests per 10 s per IP) answers 429 to a full parallel run.
+  workers: CI || LIVE ? 2 : undefined,
   timeout: 45_000,
   expect: { timeout: 10_000 },
   reporter: CI ? [["github"], ["html", { open: "never" }]] : [["list"]],
