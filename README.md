@@ -112,7 +112,7 @@ By default Playwright runs `npm run e2e:server`: an `E2E=1` build (`vite.config.
 - `a11y.spec`: axe (WCAG 2.2 A/AA) in light and dark mode, excluding Cloudflare's Turnstile iframe.
 - `behaviour.spec` (local only, it writes): KV put/get, a D1 insert through the real Turnstile widget (test keys), a Durable Object counter, the race test, a two-browser WebSocket chat, Cache API MISS→HIT, rate limiting 429s.
 
-Errors from other origins' frames are ignored: on the live site Turnstile's iframe logs its own CSP blocks and Private Access Token 401s. Live runs retry a failed test once; a pass on retry is reported as flaky.
+Errors from other origins' frames are ignored: on the live site Turnstile's iframe logs its own CSP blocks and Private Access Token 401s. Live runs use two workers and retry a failed test once (a pass on retry is reported as flaky): the zone's edge rate-limiting rule (20 `/api/` requests per 10 s per IP) answers 429 to a fully parallel run, measured at 22 successes out of 30 simultaneous requests.
 
 ## Learning path
 
