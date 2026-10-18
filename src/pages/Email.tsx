@@ -74,7 +74,7 @@ export function Email() {
                   <td className="small">{m.forwarded ? "✅" : "—"} / {m.replied ? "✅" : "—"}</td>
                   <td className="actions"><button className="ghost" onClick={(e) => { e.stopPropagation(); remove(m.id); }}>Delete</button></td>
                 </tr>
-                {open === m.id && <tr><td colSpan={6}><pre className="code">{m.text_preview || "(no plain-text body)"}</pre></td></tr>}
+                {open === m.id && <tr><td colSpan={6}><pre className="code" tabIndex={0}>{m.text_preview || "(no plain-text body)"}</pre></td></tr>}
               </Fragment>
             ))}</tbody>
           </table>

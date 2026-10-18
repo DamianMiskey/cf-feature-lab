@@ -5,7 +5,9 @@
   --text: #1d1d1b;
   --muted: #64625d;
   --accent: #f38020;
-  --accent-ink: #b35400;
+  --accent-ink: #a34c00; /* ≥ 4.5:1 on every light background, code included */
+  /* Text on the orange: white only manages 2.6:1, near-black 6.4:1 (7.3:1 in dark mode). */
+  --on-accent: #1d1d1b;
   --code-bg: #f1f0ec;
   --error: #c0362c;
   color-scheme: light;
@@ -34,10 +36,14 @@ body {
 }
 a { color: var(--accent-ink); }
 code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+/* Long names in running text may break anywhere rather than push the page wider. */
+:not(pre) > code { overflow-wrap: anywhere; }
 h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 0.4rem; }
 h2 { font-size: 1.05rem; margin: 0 0 0.6rem; }
 
-.shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+/* minmax(0, 1fr), not 1fr: a column sized to its content would let a wide
+   code block or table widen the whole page on a phone. */
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
 .sidebar {
   position: sticky; top: 0; height: 100vh; overflow-y: auto;
   border-right: 1px solid var(--border); background: var(--surface); padding: 1rem 0.75rem;
@@ -46,11 +52,11 @@ h2 { font-size: 1.05rem; margin: 0 0 0.6rem; }
 .nav-cat { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 0.75rem 0.5rem 0.25rem; }
 .nav-link { display: block; padding: 0.3rem 0.5rem; border-radius: 6px; color: var(--text); text-decoration: none; }
 .nav-link:hover { background: var(--code-bg); }
-.nav-link.active { background: var(--accent); color: #fff; }
+.nav-link.active { background: var(--accent); color: var(--on-accent); }
 .nav-link.pending { color: var(--muted); }
-.nav-link.pending.active { color: #fff; }
+.nav-link.pending.active { color: var(--on-accent); }
 
-.content { padding: 2rem clamp(16px, 4vw, 3rem); max-width: 1000px; width: 100%; }
+.content { padding: 2rem clamp(16px, 4vw, 3rem); max-width: 1000px; width: 100%; min-width: 0; }
 .feature-head { margin-bottom: 1.5rem; }
 .tagline { color: var(--muted); font-size: 1.05rem; margin: 0; }
 
@@ -66,7 +72,7 @@ h2 { font-size: 1.05rem; margin: 0 0 0.6rem; }
 
 button {
   font: inherit; cursor: pointer; border: 0; border-radius: 6px;
-  background: var(--accent); color: #fff; padding: 0.45rem 0.9rem; font-weight: 600;
+  background: var(--accent); color: var(--on-accent); padding: 0.45rem 0.9rem; font-weight: 600;
 }
 button:hover { filter: brightness(1.07); }
 button.ghost { background: transparent; color: var(--accent-ink); border: 1px solid var(--border); font-weight: 500; }
@@ -90,12 +96,12 @@ pre.json, pre.code {
 .tile-name { font-weight: 650; }
 .tile-sum { color: var(--muted); font-size: 0.88rem; }
 .badge { align-self: flex-start; font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 99px; background: var(--code-bg); color: var(--muted); }
-.tile:not(.pending) .badge { background: var(--accent); color: #fff; }
+.tile:not(.pending) .badge { background: var(--accent); color: var(--on-accent); }
 .how ol { margin: 0; padding-left: 1.2rem; }
 .how li + li { margin-top: 0.4rem; }
 
 @media (max-width: 760px) {
-  .shell { grid-template-columns: 1fr; }
+  .shell { grid-template-columns: minmax(0, 1fr); }
   .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border);
     display: flex; flex-wrap: wrap; gap: 0.25rem; }
   .brand { width: 100%; padding-bottom: 0.25rem; }
@@ -153,7 +159,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .steps li { counter-increment: s; font-size: 0.8rem; padding: 0.2rem 0.6rem; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
 .steps li::before { content: counter(s) ". "; }
 .steps li.done { border-color: #2ea44f; color: #2ea44f; }
-.steps li.current { background: var(--accent); border-color: var(--accent); color: #fff; }
+.steps li.current { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
 /* Edge (phase 6) */
 select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 0.5rem; }
@@ -180,6 +186,6 @@ input[type="range"] { accent-color: var(--accent); }
 .suggestions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .suggestions button { font-size: 0.8rem; padding: 0.25rem 0.6rem; }
 .agent-state { display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.5rem; }
-.toast { position: sticky; top: 0.75rem; z-index: 5; display: flex; gap: 0.75rem; align-items: center; background: var(--accent); color: #fff; padding: 0.6rem 1rem; border-radius: 8px; margin-bottom: 1rem; box-shadow: 0 4px 16px rgba(0,0,0,.15); }
-.toast button { color: #fff; border-color: rgba(255,255,255,.5); }
+.toast { position: sticky; top: 0.75rem; z-index: 5; display: flex; gap: 0.75rem; align-items: center; background: var(--accent); color: var(--on-accent); padding: 0.6rem 1rem; border-radius: 8px; margin-bottom: 1rem; box-shadow: 0 4px 16px rgba(0,0,0,.15); }
+.toast button { color: var(--on-accent); border-color: rgba(0,0,0,.35); }
 .turnstile { margin-bottom: 0.6rem; min-height: 65px; }

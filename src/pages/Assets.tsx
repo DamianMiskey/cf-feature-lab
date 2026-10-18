@@ -39,7 +39,7 @@ export function Assets() {
         {probe != null && <JsonView value={probe} />}
       </Demo>
       <Demo title="The config that makes it work">
-        <pre className="code">{config}</pre>
+        <pre className="code" tabIndex={0}>{config}</pre>
       </Demo>
     </FeaturePage>
   );

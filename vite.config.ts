@@ -10,8 +10,16 @@ export default defineConfig(({ mode }) => {
   // database. Take the URL from .env.local (written by `neon env pull`)
   // instead of committing it to wrangler.jsonc.
   const env = loadEnv(mode, process.cwd(), "");
-  process.env.CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE ??= env.DATABASE_URL_UNPOOLED;
+
+  // E2E=1 (the Playwright server): never touch the real account or Neon, and
+  // keep test data in its own folder, apart from your local dev data. Workers
+  // AI and Vectorize have no local simulation, so their demos fail there.
+  const e2e = process.env.E2E === "1";
+  process.env.CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE ??= e2e
+    ? "postgresql://test:test@127.0.0.1:5432/test"
+    : env.DATABASE_URL_UNPOOLED;
+  const worker = e2e ? cloudflare({ remoteBindings: false, persistState: { path: ".wrangler/e2e-state" } }) : cloudflare();
 
   // agents() compiles the @callable() decorators, which Vite's compiler (Oxc) doesn't support yet.
-  return { plugins: [agents(), react(), cloudflare()] };
+  return { plugins: [agents(), react(), worker] };
 });

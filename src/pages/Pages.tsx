@@ -73,7 +73,7 @@ export function Pages() {
       </Demo>
 
       <Demo title="Pages project layout">
-        <pre className="code">{`cf-feature-lab-pages/
+        <pre className="code" tabIndex={0}>{`cf-feature-lab-pages/
 ├── wrangler.jsonc            # pages_build_output_dir, KV + service binding
 ├── public/                   # served as-is (no build step)
 │   ├── index.html, about.html, 404.html

@@ -53,7 +53,7 @@ export function Observability() {
       </Demo>
 
       <Demo title="3. Releasing safely: commands to try">
-        <pre className="code">{`# Every deploy is a new version
+        <pre className="code" tabIndex={0}>{`# Every deploy is a new version
 npx wrangler deployments list
 npx wrangler versions list
 
