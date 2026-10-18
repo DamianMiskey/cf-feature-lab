@@ -111,7 +111,7 @@ export function D1() {
       </Demo>
 
       <Demo title="The migration that created this table">
-        <pre className="code">{migration}</pre>
+        <pre className="code" tabIndex={0}>{migration}</pre>
         <p className="muted small">Apply locally with <code>npx wrangler d1 migrations apply DB --local</code>, and in production with <code>--remote</code>. D1 records applied migrations in a <code>d1_migrations</code> table.</p>
       </Demo>
 

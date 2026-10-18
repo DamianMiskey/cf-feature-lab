@@ -98,6 +98,22 @@ npm run test:watch
 
 Tests use `@cloudflare/vitest-plugin` (the successor to `@cloudflare/vitest-pool-workers`). Each test file gets isolated local storage, D1 migrations are applied in `test/apply-migrations.ts`, and `remoteBindings: false` keeps the tests away from your real account. `npm run deploy` runs the tests first and stops if any fail.
 
+## End-to-end tests (Playwright)
+
+```bash
+npm run e2e                                        # builds in E2E mode, runs `vite preview`, tests it
+BASE_URL=https://lab.djmiskey.com npm run e2e      # the live site: read-only tests + @deployed ones
+```
+
+By default Playwright runs `npm run e2e:server`: an `E2E=1` build (`vite.config.ts` then turns **remote bindings off**, points Hyperdrive at a dummy address and keeps storage in `.wrangler/e2e-state`), local D1 migrations into that folder, and `vite preview` on :4317. Nothing reaches the Cloudflare account, Workers AI or Neon, and your local dev data is untouched, so tests there may write. Against `BASE_URL` only tests tagged `@readonly` (and `@deployed`) run.
+
+- `pages.spec`: every page on desktop and a Pixel 7: exceptions, console errors, failed requests, CSP blocks, sideways overflow. Allowed, per page: the inbox's 401 for anonymous visitors, and (locally only) Hyperdrive's and Vectorize's 500s.
+- `headers.spec`: `public/_headers` on every page, the API's own CSP, immutable asset caching, SPA fallback vs API 404, admin routes failing closed; `@deployed`: WAF 403s, HTTP→HTTPS, TLS via `/cdn-cgi/trace`, Access in front of `admin.djmiskey.com`.
+- `a11y.spec`: axe (WCAG 2.2 A/AA) in light and dark mode, excluding Cloudflare's Turnstile iframe.
+- `behaviour.spec` (local only, it writes): KV put/get, a D1 insert through the real Turnstile widget (test keys), a Durable Object counter, the race test, a two-browser WebSocket chat, Cache API MISS→HIT, rate limiting 429s.
+
+Errors from other origins' frames are ignored: on the live site Turnstile's iframe logs its own CSP blocks and Private Access Token 401s. Live runs retry a failed test once; a pass on retry is reported as flaky.
+
 ## Learning path
 
 Work through the pages in this order. Each one builds on the last:
@@ -137,3 +153,4 @@ For each feature: read the page, use the demo, open "Show Worker code", then fin
 - [x] **Phase 10: Agents + Git.** `LabAgent` (Agents SDK + `@cloudflare/ai-chat`): streaming chat on Workers AI via AI Gateway, server tools over D1/DOs/R2, a human-approved `addNote` tool, a browser-side tool, `this.schedule()` reminders, live `setState` sync and `@callable()` RPC. The project is now a Git repo.
 - [x] **Phase 9: Extras.** Hyperdrive in front of a Neon Postgres database (live: ~2,050 ms direct vs 3–8 ms through Hyperdrive), Browser Run (screenshots, PDFs, scraping, warm-session reuse)
 - [x] **Phase 8: Polish.** 28 integration tests at the time (`@cloudflare/vitest-plugin`), Logs & Observability page (Workers Logs, `wrangler tail`, version metadata, gradual rollouts), learning path on the home page
+- [x] **Testing.** Playwright end-to-end suite in CI (132 tests locally against an isolated E2E build; read-only and `@deployed` tests against the live site). It found and fixed: white text on Cloudflare orange (2.6:1, now near-black at 6.4:1), unlabelled file inputs, scrollable code boxes unreachable by keyboard, and nine pages wider than a phone

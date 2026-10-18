@@ -79,7 +79,7 @@ export function AnalyticsEngine() {
       {data && (
         <Demo title="The SQL behind it">
           <p className="small muted">Counts use <code>SUM(_sample_interval)</code> because at high volume Analytics Engine stores a sample and records how many events each stored row represents.</p>
-          <pre className="code">{data.queries.byRoute.trim()}</pre>
+          <pre className="code" tabIndex={0}>{data.queries.byRoute.trim()}</pre>
           <button className="ghost" onClick={load}>Refresh</button>
         </Demo>
       )}

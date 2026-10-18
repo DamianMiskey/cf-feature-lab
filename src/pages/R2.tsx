@@ -83,7 +83,7 @@ export function R2() {
         <Turnstile action="upload" onToken={setToken} resetKey={resetKey} />
         <p>The browser PUTs the raw file to the Worker, which streams it straight into <code>BUCKET.put()</code> without buffering it.</p>
         <div className="form-row">
-          <input type="file" ref={fileInput} />
+          <input type="file" ref={fileInput} aria-label="File to upload" />
           <label className="grow">Custom metadata: note<input value={note} onChange={(e) => setNote(e.target.value)} placeholder="optional" /></label>
           <button onClick={upload} disabled={busy || !token}>{busy ? "Uploading…" : "Upload"}</button>
         </div>

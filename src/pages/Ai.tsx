@@ -81,7 +81,7 @@ function ClassifyDemo() {
   return (
     <Demo title="2. Image classification">
       <p>Upload a photo. <code>resnet-50</code> picks the most likely of 1,000 everyday categories.</p>
-      <input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0])} />
+      <input type="file" accept="image/*" aria-label="Image to classify" onChange={(e) => onFile(e.target.files?.[0])} />
       {error && <p className="error">{error}</p>}
       {preview && (
         <div className="classify">

@@ -9,7 +9,8 @@ export function CodePeek({ file, source }: { file: string; source: string }) {
       <button className="ghost" onClick={() => setOpen(!open)} aria-expanded={open}>
         {open ? "Hide" : "Show"} Worker code · <code>{file}</code>
       </button>
-      {open && <pre className="code">{source}</pre>}
+      {/* tabIndex: a box that scrolls must be reachable by keyboard to scroll it. */}
+      {open && <pre className="code" tabIndex={0}>{source}</pre>}
     </section>
   );
 }

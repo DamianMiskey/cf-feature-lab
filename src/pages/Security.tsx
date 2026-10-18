@@ -133,7 +133,7 @@ export function Security() {
             ))}</tbody>
           </table>
         )}
-        <details className="small"><summary>public/_headers</summary><pre className="code">{headersFile}</pre></details>
+        <details className="small"><summary>public/_headers</summary><pre className="code" tabIndex={0}>{headersFile}</pre></details>
       </Demo>
 
       <Demo title="2. Input hardening: try two attacks">

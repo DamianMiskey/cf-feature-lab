@@ -49,5 +49,6 @@ export function Demo({ title, children }: { title: string; children: ReactNode }
 }
 
 export function JsonView({ value }: { value: unknown }) {
-  return <pre className="json">{JSON.stringify(value, null, 2)}</pre>;
+  // tabIndex: a box that scrolls must be reachable by keyboard to scroll it.
+  return <pre className="json" tabIndex={0}>{JSON.stringify(value, null, 2)}</pre>;
 }
